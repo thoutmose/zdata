@@ -1,0 +1,29 @@
+# Streamlit server configuration.
+# Security-relevant defaults for a public-facing deployment; see README "Security" section.
+
+# NOTE on server.enableCORS: leaving it at its default (true) is the secure
+# choice — Streamlit then restricts cross-origin requests instead of sending
+# `Access-Control-Allow-Origin: *`. Before going public, also set
+# `server.allowedHosts` (env: STREAMLIT_SERVER_ALLOWED_HOSTS) to the real
+# domain(s) this app will be served from, to close cross-origin WebSocket
+# access — neither enableCORS nor XSRF protection alone does that.
+[server]
+headless = true
+enableXsrfProtection = true
+enableCORS = true
+maxUploadSize = 1
+runOnSave = false
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#2a78d6"
+backgroundColor = "#f9f9f7"
+secondaryBackgroundColor = "#fcfcfb"
+textColor = "#0b0b0b"
+font = "sans serif"
+
+[client]
+showErrorDetails = false

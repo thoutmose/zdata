@@ -1,0 +1,28 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Logs
+logging/
+*.log
+*.log.gz
+
+# Type checker / test caches
+.ty_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
