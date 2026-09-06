@@ -4,14 +4,20 @@ import numpy as np
 import polars as pl
 from app.data.chat_ml import (
     STREAMER_CLUSTER_FEATURES,
+    _looks_like_emote_code,
+    _looks_like_ner_noise,
     cluster_channel_hours,
     cluster_chatters,
     cluster_streamers,
+    dependency_parse,
     detect_chat_mood_outliers,
     detect_chatter_outliers,
     detect_streamer_outliers,
     fit_donation_forecast,
+    named_entities,
     pca_projection,
+    pos_tag_distribution,
+    word_embedding_projection,
 )
 
 
@@ -33,6 +39,27 @@ def test_cluster_channel_hours_drops_sparse_hours() -> None:
     documents, top_terms = cluster_channel_hours(_messages(rows), n_clusters=2)
     assert documents.is_empty()
     assert top_terms == {}
+
+
+def test_cluster_channel_hours_merges_word_inflections_via_lemma() -> None:
+    # "regarde"/"regardait"/"regardent" are all inflections of the same
+    # verb — with lemmatization they should collapse into one shared top
+    # term rather than splitting a topic's signal three ways.
+    text = "il regarde le stream, il regardait hier, ils regardent maintenant"
+    rows = []
+    for hour in range(4):
+        rows += [("chan_a", hour, text) for _ in range(30)]
+    for hour in range(4, 8):
+        rows += [("chan_b", hour, "la cagnotte des dons pour la bonne cause") for _ in range(30)]
+    documents, top_terms = cluster_channel_hours(
+        _messages(rows), n_clusters=2, min_messages_per_hour=30
+    )
+    assert not documents.is_empty()
+    all_terms = {term for terms in top_terms.values() for term in terms}
+    assert "regarder" in all_terms
+    assert "regarde" not in all_terms
+    assert "regardait" not in all_terms
+    assert "regardent" not in all_terms
 
 
 def test_cluster_channel_hours_groups_similar_topics() -> None:
@@ -197,3 +224,62 @@ def test_fit_donation_forecast_predicts_final_total_reasonably_well() -> None:
         "total_messages_mid",
     }
     assert abs(sum(result["feature_importances"].values()) - 1.0) < 1e-6
+
+
+def test_looks_like_emote_code_flags_interior_case_transitions() -> None:
+    assert _looks_like_emote_code("MegaphoneZ")
+    assert _looks_like_emote_code("adfaceBZZZ")
+    assert _looks_like_emote_code("VoteYea")
+    assert not _looks_like_emote_code("Domingo")
+    assert not _looks_like_emote_code("ZEVENT")
+    assert not _looks_like_emote_code("bonjour")
+
+
+def test_looks_like_ner_noise_flags_emote_spam_and_shouting() -> None:
+    assert _looks_like_ner_noise("MegaphoneZ")
+    assert _looks_like_ner_noise("MDRRR")
+    assert _looks_like_ner_noise("maryJam axyartDancing")
+    assert _looks_like_ner_noise("@someone")
+    assert not _looks_like_ner_noise("Domingo")
+    assert not _looks_like_ner_noise("Elden Ring")
+    assert not _looks_like_ner_noise("GTA 5")
+
+
+def _text_messages(texts: list[str]) -> pl.DataFrame:
+    return pl.DataFrame({"message_text": texts})
+
+
+def test_pos_tag_distribution_counts_real_tags() -> None:
+    dist = pos_tag_distribution(_text_messages(["le stream est genial", "merci pour le don"]))
+    assert not dist.is_empty()
+    assert "pos" in dist.columns
+    assert (dist["count"].diff().drop_nulls() <= 0).all()
+
+
+def test_named_entities_finds_a_real_person_and_filters_emote_spam() -> None:
+    messages = _text_messages(
+        [
+            "quel beau run de Domingo aujourd'hui",
+            "Domingo est le meilleur",
+            "MegaphoneZ MegaphoneZ MegaphoneZ",
+        ]
+        * 5
+    )
+    entities = named_entities(messages, top_n=10)
+    assert not entities.is_empty()
+    assert "Domingo" in entities["entity"].to_list()
+    assert "MegaphoneZ" not in " ".join(entities["entity"].to_list())
+
+
+def test_dependency_parse_returns_one_row_per_token() -> None:
+    parsed = dependency_parse("le stream est genial")
+    assert list(parsed.columns) == ["token", "lemma", "pos", "dependency", "head"]
+    assert len(parsed) == 4  # "le", "stream", "est", "genial"
+
+
+def test_word_embedding_projection_returns_2d_coords_for_frequent_words() -> None:
+    messages = _text_messages(["le stream est genial et le jeu est super"] * 20)
+    projected = word_embedding_projection(messages, top_k=10)
+    if not projected.is_empty():
+        assert set(projected.columns) == {"word", "x", "y", "count"}
+        assert (projected["count"] > 0).all()

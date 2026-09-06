@@ -1442,8 +1442,116 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "distinguish it from every other cluster. Clustering raw individual "
             "messages was tried first and rejected: real chat messages are so short "
             "that almost all of them ended up in one meaningless catch-all cluster; "
-            "pooling by channel-hour first fixes that."
+            "pooling by channel-hour first fixes that.\n\n"
+            "Words are lemmatized before counting (spaCy's French pipeline) — "
+            "\"joue\"/\"jouait\"/\"jouer\" collapse into one shared term instead of "
+            "splitting a topic's signal across inflected forms — and a `word word` "
+            "term (space-joined here, underscore-joined internally) is a bigram: two "
+            "words scored as one phrase, not two separate hits. Twitch emote codes "
+            "and copy-paste spam are filtered out before scoring (see the "
+            "Linguistic analysis section below for exactly how, and where that "
+            "filtering still lets noise through)."
         ),
+        "chatml.linguistics_heading": "Linguistic analysis (NLP)",
+        "chatml.linguistics_caption": (
+            "Real linguistic structure over a sample of chat text, via spaCy's "
+            "French pipeline (`fr_core_news_md`) and the toxicity model's own "
+            "encoder — part-of-speech tagging, dependency parsing, named-entity "
+            "recognition, static word embeddings, and contextual message "
+            "embeddings. Every technique here was run against real ZEvent chat "
+            "before being kept — see each subsection's \"How to read this chart\" "
+            "for what worked and, honestly, what didn't."
+        ),
+        "chatml.no_linguistics": "Not enough messages in the selected range to run linguistic analysis.",
+        "chatml.pos_heading": "Part-of-speech distribution",
+        "chatml.column.pos": "POS tag",
+        "chatml.column.count": "Count",
+        "chatml.chart.pos_distribution": "How often each grammatical role appears in chat",
+        "chatml.explain.pos": (
+            "Universal POS tags (spaCy's tagset): `NOUN`/`PROPN` (common/proper "
+            "nouns), `VERB`, `ADJ`, `ADV`, `PRON` (pronouns), `DET` (determiners — "
+            "\"le\"/\"la\"/\"un\"), `ADP` (prepositions — \"de\"/\"pour\"), `INTJ` "
+            "(interjections), `PUNCT`. A chat dominated by short reactions and "
+            "interjections over full sentences shows up here as a real, "
+            "measurable skew toward `INTJ`/`PUNCT`/`PRON` relative to formal "
+            "written French — not just an impression from reading a few messages."
+        ),
+        "chatml.ner_heading": "Named entities mentioned",
+        "chatml.column.entity": "Entity",
+        "chatml.column.label": "Type",
+        "chatml.chart.entities": "Most frequently mentioned named entities",
+        "chatml.explain.ner": (
+            "**Honest limitation, not a hidden one.** This is a general-purpose "
+            "French NER model — trained on formal written text, not Twitch chat — "
+            "and it will still misread some emote codes and chat slang as real "
+            "entities even after filtering (verified against real ZEvent chat: "
+            "\"MegaphoneZ\", a hype-train emote, was read as a person 200+ times "
+            "before an emote-code filter was added; some noise, like all-caps "
+            "shouting or emote codes with no interior capital, still gets through). "
+            "The filter removes text with a mid-word capital "
+            "(`\"MegaphoneZ\"`, `\"adfaceBZZZ\"` — real proper nouns only ever "
+            "capitalize their first letter), repeated-letter spam (`\"MDRRR\"`), "
+            "and a short list of common chat interjections. What survives — "
+            "`PER` (person), `LOC` (place), `ORG` (organization), `MISC` — trends "
+            "toward real signal (streamer names, game titles) the more a mention "
+            "recurs, since one-off misclassifications rarely repeat as often as a "
+            "genuine, frequently-discussed entity."
+        ),
+        "chatml.parse_heading": "Dependency parse",
+        "chatml.parse_input_label": "Message to parse",
+        "chatml.parse_caption": (
+            "Every word's grammatical role and what it depends on — the structure "
+            "a reader uses to parse a sentence without thinking about it, made "
+            "explicit. Try pasting a real chat message, in French or English."
+        ),
+        "chatml.column.token": "Token",
+        "chatml.column.lemma": "Lemma",
+        "chatml.column.dependency": "Dependency",
+        "chatml.column.head": "Depends on",
+        "chatml.explain.parse": (
+            "`dependency` is the token's grammatical relation to its `head` — "
+            "e.g. `nsubj` (nominal subject), `amod` (adjectival modifier), `det` "
+            "(determiner), `ROOT` (the sentence's main verb/predicate, which "
+            "depends on nothing — its own `head` is itself). Reading `head` for "
+            "every row reconstructs the sentence's whole dependency tree without "
+            "needing a diagram: follow each word up to what it modifies, up to "
+            "the `ROOT`."
+        ),
+        "chatml.word_embeddings_heading": "Word embeddings: a semantic map of chat vocabulary",
+        "chatml.chart.word_embeddings": "Frequent content words, projected by meaning (PCA of word vectors)",
+        "chatml.explain.word_embeddings": (
+            "Each word gets one fixed 300-dimension vector from spaCy's static "
+            "word-embedding table (trained on general French text, not this "
+            "chat), projected here to 2D — words the model considers similar in "
+            "meaning or usage land near each other, regardless of anything "
+            "specific to ZEvent. \"Static\" is the key word: unlike the "
+            "contextual embeddings below, a word has exactly one vector no "
+            "matter which message it appears in — this is the classic sense of "
+            "\"word embeddings\" (word2vec/GloVe-style), one fixed table, not a "
+            "trained-per-context representation."
+        ),
+        "chatml.contextual_embeddings_heading": "Contextual embeddings: the same word, different meanings",
+        "chatml.contextual_embeddings_caption": (
+            "Unlike the static word vectors above, a contextual embedding "
+            "depends on the *sentence* a word sits in, not just the word itself "
+            "— the same word can land in a different place depending on what "
+            "surrounds it. Reuses the toxicity classifier's own encoder purely "
+            "as a general-purpose multilingual text encoder (its classification "
+            "head isn't used here) — one 768-dimension vector per message, "
+            "mean-pooled from real (non-padding) token positions, then projected "
+            "to 2D. Gated behind a button, same reason as the ML classification "
+            "section: this loads a large transformer model, not run "
+            "automatically."
+        ),
+        "chatml.contextual_embeddings_button": "Compute contextual embeddings",
+        "chatml.contextual_embeddings_hint": (
+            "Click \"Compute contextual embeddings\" above to load the model and "
+            "see a 2D map of real messages — not run automatically, since it can "
+            "download ~2GB the first time."
+        ),
+        "chatml.contextual_embeddings_spinner": "Computing contextual embeddings...",
+        "chatml.chart.contextual_embeddings": "A sample of real messages, projected by contextual meaning",
+        "chatml.no_word_embeddings": "Not enough distinct content words in the sample to map.",
         "chatml.streamers_heading": "Streamer behavioral segments",
         "chatml.streamers_caption": (
             "Real unsupervised clustering (K-Means) over each streamer's performance "
@@ -3248,7 +3356,139 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "clustering des messages individuels bruts a été essayé en premier puis "
             "écarté : les vrais messages de chat sont si courts que presque tous se "
             "retrouvaient dans un seul cluster fourre-tout sans intérêt ; regrouper "
-            "d'abord par heure-chaîne corrige cela."
+            "d'abord par heure-chaîne corrige cela.\n\n"
+            "Les mots sont lemmatisés avant le comptage (pipeline français de "
+            "spaCy) — « joue »/« jouait »/« jouer » fusionnent en un seul terme "
+            "partagé au lieu de diviser le signal d'un sujet entre ses formes "
+            "fléchies — et un terme « mot mot » (joint par un espace ici, par un "
+            "underscore en interne) est un bigramme : deux mots comptés comme une "
+            "seule expression, pas deux occurrences séparées. Les codes d'emotes "
+            "Twitch et le spam de copier-coller sont filtrés avant le comptage "
+            "(voir la section Analyse linguistique ci-dessous pour savoir "
+            "exactement comment, et où ce filtrage laisse encore passer du bruit)."
+        ),
+        "chatml.linguistics_heading": "Analyse linguistique (NLP)",
+        "chatml.linguistics_caption": (
+            "Structure linguistique réelle sur un échantillon de texte de chat, "
+            "via le pipeline français de spaCy (`fr_core_news_md`) et l'encodeur "
+            "propre au modèle de toxicité — étiquetage grammatical (POS), analyse "
+            "syntaxique en dépendances, reconnaissance d'entités nommées, "
+            "plongements de mots statiques, et plongements contextuels de "
+            "messages. Chaque technique ici a été testée sur de vraies données "
+            "ZEvent avant d'être conservée — voir le « Comment lire ce graphique » "
+            "de chaque sous-section pour ce qui a fonctionné et, honnêtement, ce "
+            "qui n'a pas fonctionné."
+        ),
+        "chatml.no_linguistics": (
+            "Pas assez de messages dans la plage sélectionnée pour lancer "
+            "l'analyse linguistique."
+        ),
+        "chatml.pos_heading": "Répartition grammaticale (POS)",
+        "chatml.column.pos": "Étiquette POS",
+        "chatml.column.count": "Nombre",
+        "chatml.chart.pos_distribution": "Fréquence de chaque rôle grammatical dans le chat",
+        "chatml.explain.pos": (
+            "Étiquettes POS universelles (jeu d'étiquettes de spaCy) : "
+            "`NOUN`/`PROPN` (noms communs/propres), `VERB`, `ADJ`, `ADV`, `PRON` "
+            "(pronoms), `DET` (déterminants — « le »/« la »/« un »), `ADP` "
+            "(prépositions — « de »/« pour »), `INTJ` (interjections), `PUNCT`. "
+            "Un chat dominé par des réactions courtes et des interjections plutôt "
+            "que des phrases complètes se traduit ici par un déséquilibre réel et "
+            "mesurable vers `INTJ`/`PUNCT`/`PRON` par rapport au français écrit "
+            "formel — pas seulement une impression tirée de la lecture de "
+            "quelques messages."
+        ),
+        "chatml.ner_heading": "Entités nommées mentionnées",
+        "chatml.column.entity": "Entité",
+        "chatml.column.label": "Type",
+        "chatml.chart.entities": "Entités nommées les plus fréquemment mentionnées",
+        "chatml.explain.ner": (
+            "**Limite honnête, pas cachée.** C'est un modèle français de "
+            "reconnaissance d'entités généraliste — entraîné sur du texte écrit "
+            "formel, pas sur le chat Twitch — et il continuera de lire certains "
+            "codes d'emotes et argot de chat comme de vraies entités même après "
+            "filtrage (vérifié sur de vraies données ZEvent : « MegaphoneZ », une "
+            "emote de train de hype, a été lu comme une personne plus de 200 fois "
+            "avant l'ajout d'un filtre de code d'emote ; certain bruit, comme "
+            "les cris en majuscules ou les codes d'emotes sans majuscule "
+            "intérieure, passe encore). Le filtre retire le texte avec une "
+            "majuscule en milieu de mot (`\"MegaphoneZ\"`, `\"adfaceBZZZ\"` — un "
+            "vrai nom propre ne capitalise jamais que sa première lettre), le "
+            "spam de lettres répétées (`\"MDRRR\"`), et une courte liste "
+            "d'interjections de chat courantes. Ce qui survit — `PER` "
+            "(personne), `LOC` (lieu), `ORG` (organisation), `MISC` — tend vers "
+            "du vrai signal (noms de streamers, titres de jeux) d'autant plus "
+            "qu'une mention revient souvent, une erreur de classification isolée "
+            "revenant rarement aussi souvent qu'une entité réellement discutée."
+        ),
+        "chatml.parse_heading": "Analyse syntaxique en dépendances",
+        "chatml.parse_input_label": "Message à analyser",
+        "chatml.parse_caption": (
+            "Le rôle grammatical de chaque mot et ce dont il dépend — la "
+            "structure qu'un lecteur utilise pour analyser une phrase sans y "
+            "penser, rendue explicite. Essayez de coller un vrai message de "
+            "chat, en français ou en anglais."
+        ),
+        "chatml.column.token": "Token",
+        "chatml.column.lemma": "Lemme",
+        "chatml.column.dependency": "Dépendance",
+        "chatml.column.head": "Dépend de",
+        "chatml.explain.parse": (
+            "`dependency` est la relation grammaticale du token avec son `head` "
+            "— par ex. `nsubj` (sujet nominal), `amod` (modifieur adjectival), "
+            "`det` (déterminant), `ROOT` (le verbe/prédicat principal de la "
+            "phrase, qui ne dépend de rien — son propre `head` est lui-même). "
+            "Lire `head` pour chaque ligne reconstruit tout l'arbre de "
+            "dépendances de la phrase sans avoir besoin d'un diagramme : suivre "
+            "chaque mot jusqu'à ce qu'il modifie, jusqu'au `ROOT`."
+        ),
+        "chatml.word_embeddings_heading": (
+            "Plongements de mots : une carte sémantique du vocabulaire du chat"
+        ),
+        "chatml.chart.word_embeddings": (
+            "Mots de contenu fréquents, projetés par sens (ACP des vecteurs de mots)"
+        ),
+        "chatml.explain.word_embeddings": (
+            "Chaque mot reçoit un vecteur fixe à 300 dimensions issu de la table "
+            "de plongements de mots statiques de spaCy (entraînée sur du "
+            "français général, pas ce chat), projeté ici en 2D — les mots que le "
+            "modèle considère proches en sens ou en usage se retrouvent proches "
+            "les uns des autres, indépendamment de tout ce qui est spécifique à "
+            "ZEvent. « Statique » est le mot-clé : contrairement aux plongements "
+            "contextuels ci-dessous, un mot a exactement un vecteur peu importe "
+            "le message dans lequel il apparaît — c'est le sens classique de "
+            "« plongement de mots » (façon word2vec/GloVe), une table fixe "
+            "unique, pas une représentation entraînée par contexte."
+        ),
+        "chatml.contextual_embeddings_heading": (
+            "Plongements contextuels : le même mot, des sens différents"
+        ),
+        "chatml.contextual_embeddings_caption": (
+            "Contrairement aux vecteurs de mots statiques ci-dessus, un "
+            "plongement contextuel dépend de la *phrase* dans laquelle se "
+            "trouve un mot, pas seulement du mot lui-même — le même mot peut se "
+            "retrouver à un endroit différent selon ce qui l'entoure. Réutilise "
+            "l'encodeur propre du classificateur de toxicité purement comme "
+            "encodeur de texte multilingue généraliste (sa tête de "
+            "classification n'est pas utilisée ici) — un vecteur à 768 "
+            "dimensions par message, moyenné sur les positions de tokens réels "
+            "(hors remplissage), puis projeté en 2D. Caché derrière un bouton, "
+            "même raison que la section de classification ML : cela charge un "
+            "grand modèle transformer, non exécuté automatiquement."
+        ),
+        "chatml.contextual_embeddings_button": "Calculer les plongements contextuels",
+        "chatml.contextual_embeddings_hint": (
+            "Cliquez sur « Calculer les plongements contextuels » ci-dessus pour "
+            "charger le modèle et voir une carte 2D de vrais messages — non "
+            "exécuté automatiquement, car cela peut télécharger environ 2 Go la "
+            "première fois."
+        ),
+        "chatml.contextual_embeddings_spinner": "Calcul des plongements contextuels...",
+        "chatml.chart.contextual_embeddings": (
+            "Un échantillon de vrais messages, projeté par sens contextuel"
+        ),
+        "chatml.no_word_embeddings": (
+            "Pas assez de mots de contenu distincts dans l'échantillon pour les cartographier."
         ),
         "chatml.streamers_heading": "Segments comportementaux des streamers",
         "chatml.streamers_caption": (

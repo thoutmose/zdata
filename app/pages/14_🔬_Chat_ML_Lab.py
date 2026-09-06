@@ -50,11 +50,17 @@ from app.data.chat_ml import (
     cluster_channel_hours,
     cluster_chatters,
     cluster_streamers,
+    contextual_message_embeddings,
+    dependency_parse,
     detect_chat_mood_outliers,
     detect_chatter_outliers,
     detect_streamer_outliers,
     fit_donation_forecast,
+    named_entities,
     pca_projection,
+    pos_tag_distribution,
+    project_2d,
+    word_embedding_projection,
 )
 from app.data.repository import (
     get_chat_message_sample,
@@ -121,6 +127,121 @@ else:
         st.plotly_chart(topics_fig, width="stretch")
         st.dataframe(topics_table, width="stretch", hide_index=True)
         chart_explainer(t("chatml.explain.topics"))
+
+# --- Section 1b: linguistic analysis (POS, NER, dependency parse, embeddings) ---
+st.subheader(t("chatml.linguistics_heading"))
+st.caption(t("chatml.linguistics_caption"))
+if messages_for_topics.is_empty():
+    st.info(t("chatml.no_linguistics"))
+else:
+    st.markdown(f"**{t('chatml.pos_heading')}**")
+    pos_dist = pos_tag_distribution(messages_for_topics)
+    pos_fig = go.Figure(
+        go.Bar(x=pos_dist["pos"], y=pos_dist["count"], marker_color=CATEGORICAL[0])
+    )
+    apply_base_layout(pos_fig, title=t("chatml.chart.pos_distribution"), height=320)
+    pos_fig.update_layout(showlegend=False)
+    pos_fig.update_xaxes(title_text=t("chatml.column.pos"))
+    st.plotly_chart(pos_fig, width="stretch")
+    chart_explainer(t("chatml.explain.pos"))
+
+    st.markdown(f"**{t('chatml.ner_heading')}**")
+    entities = named_entities(messages_for_topics)
+    if entities.is_empty():
+        st.info(t("chatml.no_linguistics"))
+    else:
+        entities_table = entities.rename(
+            {
+                "entity": t("chatml.column.entity"),
+                "label": t("chatml.column.label"),
+                "count": t("chatml.column.count"),
+            }
+        )
+        st.dataframe(entities_table, width="stretch", hide_index=True)
+        chart_explainer(t("chatml.explain.ner"))
+
+    st.markdown(f"**{t('chatml.parse_heading')}**")
+    st.caption(t("chatml.parse_caption"))
+    all_texts = messages_for_topics["message_text"].to_list()
+    default_message = next((m for m in all_texts if 15 <= len(m) <= 80), all_texts[0])
+    parse_input = st.text_input(
+        t("chatml.parse_input_label"), value=default_message, key="chatml_parse_input"
+    )
+    if parse_input.strip():
+        parsed_table = dependency_parse(parse_input).rename(
+            {
+                "token": t("chatml.column.token"),
+                "lemma": t("chatml.column.lemma"),
+                "pos": t("chatml.column.pos"),
+                "dependency": t("chatml.column.dependency"),
+                "head": t("chatml.column.head"),
+            }
+        )
+        st.dataframe(parsed_table, width="stretch", hide_index=True)
+        chart_explainer(t("chatml.explain.parse"))
+
+    st.markdown(f"**{t('chatml.word_embeddings_heading')}**")
+    word_vectors = word_embedding_projection(messages_for_topics)
+    if word_vectors.is_empty():
+        st.info(t("chatml.no_word_embeddings"))
+    else:
+        marker_sizes = 6 + 14 * (word_vectors["count"] / word_vectors["count"].max())
+        we_fig = go.Figure(
+            go.Scatter(
+                x=word_vectors["x"],
+                y=word_vectors["y"],
+                mode="markers+text",
+                text=word_vectors["word"],
+                textposition="top center",
+                textfont={"size": 10},
+                marker={"size": marker_sizes, "color": CATEGORICAL[2], "opacity": 0.75},
+                customdata=word_vectors["count"],
+                hovertemplate="%{text}<br>count=%{customdata}<extra></extra>",
+            )
+        )
+        apply_base_layout(we_fig, title=t("chatml.chart.word_embeddings"), height=520)
+        we_fig.update_layout(showlegend=False)
+        we_fig.update_xaxes(title_text=t("chatml.column.pca1"))
+        we_fig.update_yaxes(title_text=t("chatml.column.pca2"))
+        st.plotly_chart(we_fig, width="stretch")
+        chart_explainer(t("chatml.explain.word_embeddings"))
+
+    st.markdown(f"**{t('chatml.contextual_embeddings_heading')}**")
+    st.caption(t("chatml.contextual_embeddings_caption"))
+    if st.button(t("chatml.contextual_embeddings_button"), key="chatml_run_contextual"):
+        with st.spinner(t("chatml.contextual_embeddings_spinner")):
+            embed_sample = (
+                get_chat_message_sample(*date_range, 150) if date_range else pl.DataFrame()
+            )
+            embed_sample = apply_global_streamer_filter(embed_sample)
+            if selected_chatter_names and not embed_sample.is_empty():
+                embed_sample = embed_sample.filter(
+                    pl.col("chatter").is_in(selected_chatter_names)
+                )
+            if embed_sample.is_empty():
+                st.info(t("chatml.no_linguistics"))
+            else:
+                embed_texts, embeddings = contextual_message_embeddings(embed_sample)
+                embed_coords = project_2d(embeddings)
+                ce_fig = go.Figure(
+                    go.Scatter(
+                        x=embed_coords[:, 0],
+                        y=embed_coords[:, 1],
+                        mode="markers",
+                        marker={"color": CATEGORICAL[3], "size": 8},
+                        text=embed_texts,
+                        hovertemplate="%{text}<extra></extra>",
+                    )
+                )
+                apply_base_layout(
+                    ce_fig, title=t("chatml.chart.contextual_embeddings"), height=480
+                )
+                ce_fig.update_layout(showlegend=False)
+                ce_fig.update_xaxes(title_text=t("chatml.column.pca1"))
+                ce_fig.update_yaxes(title_text=t("chatml.column.pca2"))
+                st.plotly_chart(ce_fig, width="stretch")
+    else:
+        st.caption(t("chatml.contextual_embeddings_hint"))
 
 # --- Section 2: streamer behavioral clustering ---
 st.subheader(t("chatml.streamers_heading"))
