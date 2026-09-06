@@ -1462,6 +1462,21 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "verdict on the person."
         ),
         "chatintel.no_streamers": "No streamer data available yet.",
+        "chatintel.scope_label": "⚡ Chat-analysis time window (for speed)",
+        "chatintel.scope.last_1h": "Last hour",
+        "chatintel.scope.last_6h": "Last 6 hours",
+        "chatintel.scope.last_12h": "Last 12 hours",
+        "chatintel.scope.full": "Full selected range",
+        "chatintel.scope_caption": (
+            "Sections below that read raw chat text (hype, sentiment, toxicity, "
+            "mood, trending phrases) analyze {start} → {end}. They default to a "
+            "short recent window, not your full sidebar date range, because "
+            "every one of them scans the *entire* window's raw chat regardless "
+            "of how few results it returns — narrowing this is the one thing "
+            "that actually cuts load time (verified: a 66-hour scan took ~3s, "
+            "a 1-hour one took ~0.4s). Pick \"Full selected range\" to see the "
+            "whole event — it'll be slower to load, by choice, not by accident."
+        ),
         "chatintel.hype_heading": "Chat hype meter",
         "chatintel.hype_weight_punct": "Punctuation weight",
         "chatintel.hype_weight_caps": "ALL-CAPS weight",
@@ -3608,6 +3623,24 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "vérifier en contexte, pas comme un verdict sur la personne."
         ),
         "chatintel.no_streamers": "Aucune donnée de streamer disponible pour le moment.",
+        "chatintel.scope_label": "⚡ Fenêtre temporelle d'analyse du chat (pour la vitesse)",
+        "chatintel.scope.last_1h": "Dernière heure",
+        "chatintel.scope.last_6h": "Dernières 6 heures",
+        "chatintel.scope.last_12h": "Dernières 12 heures",
+        "chatintel.scope.full": "Plage sélectionnée complète",
+        "chatintel.scope_caption": (
+            "Les sections ci-dessous qui lisent le texte brut du chat (hype, "
+            "sentiment, toxicité, ambiance, expressions tendance) analysent "
+            "{start} → {end}. Elles utilisent par défaut une courte fenêtre "
+            "récente, pas toute votre plage de dates de la barre latérale, "
+            "car chacune d'elles scanne l'*intégralité* du chat brut de la "
+            "fenêtre, quel que soit le nombre de résultats retournés — "
+            "restreindre cette fenêtre est la seule chose qui réduit "
+            "réellement le temps de chargement (vérifié : un scan de 66 "
+            "heures a pris ~3 s, un scan d'une heure ~0,4 s). Choisissez "
+            "« Plage sélectionnée complète » pour voir tout l'événement — ce "
+            "sera plus lent à charger, par choix, pas par accident."
+        ),
         "chatintel.hype_heading": "Baromètre de hype du chat",
         "chatintel.hype_weight_punct": "Poids ponctuation",
         "chatintel.hype_weight_caps": "Poids MAJUSCULES",

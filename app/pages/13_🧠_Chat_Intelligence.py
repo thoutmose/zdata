@@ -10,7 +10,17 @@ and — more importantly — a plain regex over `stg.stg_bronze__live_chat`'s
 analysis here is lexicon/heuristic ("NLP-lite") rather than a trained model,
 and every event-wide one runs over a random *sample* of the window rather
 than a full scan — see `app/data/repository.py::PostgresDataSource._chat_sample_rate`
-and `app/data/chat_nlp.py` for the exact methods.
+and `app/data/chat_nlp.py` for the exact methods. Sampling alone doesn't
+avoid the underlying cost, though: confirmed via `EXPLAIN (ANALYZE,
+BUFFERS)` against the real warehouse, the table has no index at all, so
+every query scans it in full regardless of the sample rate — cutting the
+sample target 50x changed query time by under 5%. Narrowing the *date
+window* does help, since Postgres can skip a row's expensive regex/
+aggregate work the moment its timestamp fails the (still fully-scanned)
+date check — confirmed: a 66-hour window took ~3s, a 1-hour one ~0.4s.
+That's why every per-message section below defaults to a short recent
+window rather than the sidebar's full selected range, with an explicit
+control to widen it.
 
 Sentiment and toxicity share one lexicon (`PostgresDataSource._HOSTILE_WORD_CASE`)
 for their "negative" side — both were curated by testing candidate words
@@ -28,6 +38,7 @@ communities over the event, without naming anyone.
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 
 import plotly.graph_objects as go
 import polars as pl
@@ -121,6 +132,40 @@ if streamers.is_empty():
     st.warning(t("chatintel.no_streamers"))
     st.stop()
 
+# Every section below that reads raw chat text scans the *entire* selected
+# window regardless of how few results it returns (see the module
+# docstring) — narrowing the window is the one thing that actually cuts
+# load time, since Postgres can skip a row's regex/aggregate work the
+# moment its timestamp fails the (still full-table-scanned, unindexed)
+# date check. Defaults to a recent slice, not the full event, for a fast
+# page load by default; widen it explicitly when you want the whole event.
+_SCOPE_WINDOWS = {
+    t("chatintel.scope.last_1h"): timedelta(hours=1),
+    t("chatintel.scope.last_6h"): timedelta(hours=6),
+    t("chatintel.scope.last_12h"): timedelta(hours=12),
+    t("chatintel.scope.full"): None,
+}
+scope_choice = st.radio(
+    t("chatintel.scope_label"),
+    list(_SCOPE_WINDOWS),
+    index=0,
+    horizontal=True,
+    key="chatintel_scope",
+)
+if date_range is None:
+    analysis_range = None
+else:
+    full_start, full_end = date_range
+    window = _SCOPE_WINDOWS[scope_choice]
+    analysis_range = (max(full_start, full_end - window), full_end) if window else date_range
+    st.caption(
+        t(
+            "chatintel.scope_caption",
+            start=analysis_range[0].strftime("%a %H:%M"),
+            end=analysis_range[1].strftime("%a %H:%M"),
+        )
+    )
+
 # --- Section 1: hype score ---
 st.subheader(t("chatintel.hype_heading"))
 st.caption(t("chatintel.hype_caption"))
@@ -144,7 +189,7 @@ hype_top_n = bounded_top_n_slider(
     default_n=8,
 )
 hype_components = (
-    get_chat_hype_components_timeseries(*date_range) if date_range else pl.DataFrame()
+    get_chat_hype_components_timeseries(*analysis_range) if analysis_range else pl.DataFrame()
 )
 hype_components = apply_global_streamer_filter(hype_components)
 hype_total_weight = hype_w_punct + hype_w_caps + hype_w_emote
@@ -202,8 +247,8 @@ sentiment_top_n = bounded_top_n_slider(
     default_n=8,
 )
 sentiment = (
-    get_channel_sentiment_leaderboard_timeseries(*date_range, sentiment_top_n)
-    if date_range
+    get_channel_sentiment_leaderboard_timeseries(*analysis_range, sentiment_top_n)
+    if analysis_range
     else pl.DataFrame()
 )
 sentiment = apply_global_streamer_filter(sentiment)
@@ -230,8 +275,8 @@ toxicity_top_n = bounded_top_n_slider(
     default_n=8,
 )
 toxicity = (
-    get_channel_toxicity_leaderboard_timeseries(*date_range, toxicity_top_n)
-    if date_range
+    get_channel_toxicity_leaderboard_timeseries(*analysis_range, toxicity_top_n)
+    if analysis_range
     else pl.DataFrame()
 )
 toxicity = apply_global_streamer_filter(toxicity)
@@ -251,7 +296,7 @@ else:
 with st.expander(t("chatintel.toxicity_examples_heading"), expanded=True):
     st.caption(t("chatintel.toxicity_examples_caption"))
     toxicity_examples = (
-        get_chat_toxicity_examples(*date_range, 15) if date_range else pl.DataFrame()
+        get_chat_toxicity_examples(*analysis_range, 15) if analysis_range else pl.DataFrame()
     )
     toxicity_examples = apply_global_streamer_filter(toxicity_examples)
     selected_chatter_names = get_global_chatter_names()
@@ -282,7 +327,7 @@ with st.expander(t("chatintel.toxicity_examples_heading"), expanded=True):
 st.subheader(t("chatintel.correlation_heading"))
 st.caption(t("chatintel.correlation_caption"))
 entity_filter_caveat()
-mood = get_chat_mood_timeseries(*date_range) if date_range else pl.DataFrame()
+mood = get_chat_mood_timeseries(*analysis_range) if analysis_range else pl.DataFrame()
 donation_pace = apply_global_date_filter(get_donation_timeseries(), timestamp_col="timestamp")
 if not donation_pace.is_empty():
     donation_pace = donation_pace.with_columns(
@@ -332,7 +377,7 @@ else:
 st.subheader(t("chatintel.phrases_heading"))
 st.caption(t("chatintel.phrases_caption"))
 phrases = (
-    get_chat_trending_phrases(*date_range, 100) if date_range else pl.DataFrame()
+    get_chat_trending_phrases(*analysis_range, 100) if analysis_range else pl.DataFrame()
 )
 phrases = apply_global_streamer_filter(phrases)
 if phrases.is_empty():

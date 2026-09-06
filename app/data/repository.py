@@ -853,6 +853,29 @@ class MockDataSource:
         )
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def _cached_chat_row_count(start: datetime, end: datetime) -> int:
+    """Cached count of raw chat rows in `[start, end]`, shared across every accessor.
+
+    Module-level, not a method on `PostgresDataSource` — `get_data_source()`
+    returns a *fresh* instance on every call, so instance-level memoization
+    would never hit. This matters because several Chat Intelligence
+    sections (hype/sentiment/toxicity/mood/trending) call
+    `PostgresDataSource._chat_sample_rate` with the *same* `(start, end)`
+    window on one page load; without this, each one repeated the same
+    `COUNT(*)` query — cheap alone (well under a second) but adding up
+    across 5-6 calls every time.
+    """
+    result = PostgresDataSource._run(
+        sa.text("""
+            SELECT COUNT(*) AS total FROM stg.stg_bronze__live_chat
+            WHERE message_sent_at BETWEEN :start AND :end
+        """),
+        {"start": start.replace(tzinfo=PARIS), "end": end.replace(tzinfo=PARIS)},
+    )
+    return int(result["total"][0])
+
+
 class PostgresDataSource:
     """Real backend, querying the production PostgreSQL warehouse (via PgBouncer)."""
 
@@ -1282,15 +1305,11 @@ class PostgresDataSource:
         that would be wasteful on a narrow window and still too slow on the
         full event. 1.0 (no sampling) when the window already has fewer rows
         than `target_rows` — small windows get exact figures, not noisier
-        sampled ones.
+        sampled ones. The count itself is cached at module level (see
+        `_cached_chat_row_count`) since several callers share the same
+        window in one page load.
         """
-        total = self._run(
-            sa.text("""
-                SELECT COUNT(*) AS total FROM stg.stg_bronze__live_chat
-                WHERE message_sent_at BETWEEN :start AND :end
-            """),
-            {"start": start.replace(tzinfo=PARIS), "end": end.replace(tzinfo=PARIS)},
-        )["total"][0]
+        total = _cached_chat_row_count(start, end)
         return min(1.0, target_rows / max(total, 1))
 
     # Built once from `app.data.chat_lexicons`'s curated, real-data-verified
