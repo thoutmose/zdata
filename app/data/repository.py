@@ -75,6 +75,10 @@ class DataSource(Protocol):
         """Return the latest donation-total reconciliation check."""
         ...
 
+    def schema_table_stats(self) -> pl.DataFrame:
+        """Return every stg/int/marts table's row count and on-disk size."""
+        ...
+
     def streamer_breakdown(self) -> pl.DataFrame:
         """Return per-streamer donation, audience and engagement figures."""
         ...
@@ -486,6 +490,23 @@ class MockDataSource:
     def data_quality_check(self) -> pl.DataFrame:
         """See `DataSource.data_quality_check`."""
         return mock.data_quality_check()
+
+    def schema_table_stats(self) -> pl.DataFrame:
+        """See `DataSource.schema_table_stats`.
+
+        Empty — this section is specifically about the real warehouse's
+        catalog metadata, which doesn't exist for mock data; the page shows
+        an explanatory message instead of a fabricated row/size count.
+        """
+        return pl.DataFrame(
+            schema={
+                "schema": pl.Utf8,
+                "table": pl.Utf8,
+                "kind": pl.Utf8,
+                "row_estimate": pl.Int64,
+                "size_bytes": pl.Int64,
+            }
+        )
 
     def streamer_breakdown(self) -> pl.DataFrame:
         """See `DataSource.streamer_breakdown`."""
@@ -908,6 +929,35 @@ class PostgresDataSource:
             FROM marts.mart_donations__reconciliation
             ORDER BY ingested_at DESC
             LIMIT 1
+        """)
+        return self._run(query)
+
+    def schema_table_stats(self) -> pl.DataFrame:
+        """See `DataSource.schema_table_stats`.
+
+        Reads Postgres' own catalog (`pg_class`/`pg_namespace`), not
+        `SELECT COUNT(*)` per table — a real `COUNT(*)` over
+        `stg.stg_bronze__live_chat` (millions of rows, no index) would
+        itself risk the 15s statement timeout this app already works around
+        elsewhere (see `chat_message_sample`'s sampling). `reltuples` is the
+        same planner-maintained estimate `EXPLAIN` uses, refreshed by
+        autovacuum/analyze — accurate to within a few percent in practice,
+        which is all a "how big is this table" overview needs. Views
+        (`relkind = 'v'`) have no `reltuples`/storage of their own (Postgres
+        reports `-1`/`0`) — surfaced as `null`, not a fabricated zero.
+        """
+        query = sa.text("""
+            SELECT
+                n.nspname AS schema,
+                c.relname AS table,
+                CASE c.relkind WHEN 'v' THEN 'view' ELSE 'table' END AS kind,
+                NULLIF(c.reltuples::bigint, -1) AS row_estimate,
+                NULLIF(pg_total_relation_size(c.oid), 0) AS size_bytes
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname IN ('raw', 'stg', 'int', 'marts')
+              AND c.relkind IN ('r', 'v', 'm')
+            ORDER BY n.nspname, c.relname
         """)
         return self._run(query)
 
@@ -2750,6 +2800,20 @@ def get_data_quality_check() -> pl.DataFrame:
         See `DataSource.data_quality_check`.
     """
     return get_data_source().data_quality_check()
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def get_schema_table_stats() -> pl.DataFrame:
+    """Cached, page-facing accessor for stg/int/marts row counts and sizes.
+
+    A 5-minute TTL, longer than the app's usual 60s — table row counts and
+    on-disk sizes change slowly enough (unlike live event figures) that a
+    short TTL would just re-run the catalog scan for the same answer.
+
+    Returns:
+        See `DataSource.schema_table_stats`.
+    """
+    return get_data_source().schema_table_stats()
 
 
 @st.cache_data(ttl=60, show_spinner="Loading streamer data...")

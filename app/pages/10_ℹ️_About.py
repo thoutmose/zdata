@@ -39,6 +39,17 @@ st.dataframe(
     hide_index=True,
 )
 
+st.subheader(t("about.technical_heading"))
+st.markdown(t("about.technical_intro"))
+st.markdown(f"#### {t('about.technical_dataeng_heading')}")
+st.markdown(t("about.technical_dataeng_body"))
+st.markdown(f"#### {t('about.technical_stats_heading')}")
+st.markdown(t("about.technical_stats_body"))
+st.markdown(f"#### {t('about.technical_ml_heading')}")
+st.markdown(t("about.technical_ml_body"))
+st.markdown(f"#### {t('about.technical_principles_heading')}")
+st.markdown(t("about.technical_principles_body"))
+
 st.subheader(t("about.infra_heading"))
 st.markdown(t("about.infra_body"))
 

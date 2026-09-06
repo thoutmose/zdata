@@ -154,3 +154,74 @@ def get_edition_kickoff_time(year: int) -> datetime | None:
         return None
     labels_ms, _values = series
     return datetime.fromtimestamp(labels_ms[0] / 1000, tz=PARIS).replace(tzinfo=None)
+
+
+def day_boundary_breakdown(
+    curve: pl.DataFrame, *, day_hours: float = 24.0, max_days: int = 3
+) -> pl.DataFrame:
+    """Break a `(hours_since_start, cumulative_amount_eur)` curve into fixed-length "days".
+
+    A "day" here is a fixed `day_hours`-hour window from kickoff, not a
+    calendar day — the same hours-since-start convention every edition's
+    curve on this page is already anchored to, so "day 1" means the exact
+    same thing (hour 0-24) for every year being compared, regardless of
+    which real-world weekday each edition's day 1 fell on.
+
+    Args:
+        curve: Ascending by `hours_since_start`, e.g. from
+            `get_historical_donation_curve` or an equivalent current-edition
+            curve built the same way.
+        day_hours: Length of one "day" window, in hours.
+        max_days: How many day windows to compute at most.
+
+    Returns:
+        DataFrame with columns `day` (1-indexed), `cumulative_amount_eur`
+        (total raised by the end of this day), `delta_eur` (raised *during*
+        this day alone), `avg_per_hour_eur` (`delta_eur` divided by the
+        hours actually covered — less than `day_hours` for a still-ongoing
+        edition's final, incomplete day), and `complete` (whether the curve
+        actually reached this day's full boundary, or is still short of it
+        — the edition hasn't run that long yet, or hasn't finished). Empty
+        if `curve` is empty. Stops at the first incomplete day — a later
+        day can't have started yet if an earlier one hasn't finished.
+    """
+    schema = {
+        "day": pl.Int64,
+        "cumulative_amount_eur": pl.Float64,
+        "delta_eur": pl.Float64,
+        "avg_per_hour_eur": pl.Float64,
+        "complete": pl.Boolean,
+    }
+    if curve.is_empty():
+        return pl.DataFrame(schema=schema)
+    sorted_curve = curve.sort("hours_since_start")
+    max_hour = float(sorted_curve["hours_since_start"][-1])
+    rows: list[dict] = []
+    prev_boundary = 0.0
+    prev_value = 0.0
+    for day in range(1, max_days + 1):
+        boundary = day * day_hours
+        complete = max_hour >= boundary
+        effective_hour = boundary if complete else max_hour
+        if effective_hour <= prev_boundary:
+            break
+        reached = sorted_curve.filter(pl.col("hours_since_start") <= effective_hour)
+        value = (
+            float(reached["cumulative_amount_eur"][-1]) if not reached.is_empty() else prev_value
+        )
+        hours_covered = effective_hour - prev_boundary
+        delta = value - prev_value
+        rows.append(
+            {
+                "day": day,
+                "cumulative_amount_eur": value,
+                "delta_eur": delta,
+                "avg_per_hour_eur": delta / hours_covered if hours_covered > 0 else None,
+                "complete": complete,
+            }
+        )
+        prev_boundary = boundary
+        prev_value = value
+        if not complete:
+            break
+    return pl.DataFrame(rows, schema=schema) if rows else pl.DataFrame(schema=schema)

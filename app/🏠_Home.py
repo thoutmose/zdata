@@ -53,6 +53,7 @@ from app.data.repository import (
     get_donation_timeseries,
     get_event_bounds,
     get_event_daily_rollup,
+    get_schema_table_stats,
     get_streamer_breakdown,
     get_viewership_timeseries,
 )
@@ -61,6 +62,20 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 _FAVICON = Path(__file__).parent / "static" / "favicon.png"
+
+_APP_PAGE_COUNT = 14
+
+
+def _format_bytes(n: int | None) -> str:
+    """Format a byte count as a human-readable size (e.g. "1.9 GB"), or "—" if unknown."""
+    if n is None:
+        return "—"
+    value = float(n)
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if value < 1024 or unit == "TB":
+            return f"{value:,.0f} {unit}" if unit == "B" else f"{value:,.1f} {unit}"
+        value /= 1024
+    return f"{value:,.1f} TB"
 
 st.set_page_config(
     page_title="ZEvent Dataviz",
@@ -136,6 +151,71 @@ def _render_home() -> None:
         t("home.kpi.peak_viewers"),
         f"{viewership['total_avg_viewer_count'].max():,.0f}" if not viewership.is_empty() else "—",
     )
+
+    with st.expander(t("home.tech_expander_label"), expanded=False):
+        st.caption(t("home.tech_caption"))
+        table_stats = get_schema_table_stats()
+        if table_stats.is_empty():
+            st.info(t("home.tech_no_data"))
+        else:
+            stage_counts = (
+                table_stats.group_by("schema").agg(pl.len().alias("n_tables")).sort("schema")
+            )
+            counts_by_schema = dict(
+                zip(stage_counts["schema"], stage_counts["n_tables"], strict=True)
+            )
+
+            tkpi1, tkpi2, tkpi3 = st.columns(3)
+            tkpi1.metric(t("home.tech_kpi.tables"), f"{len(table_stats):,}")
+            total_rows = table_stats["row_estimate"].sum()
+            tkpi2.metric(t("home.tech_kpi.rows"), f"{total_rows:,.0f}" if total_rows else "—")
+            tkpi3.metric(t("home.tech_kpi.size"), _format_bytes(table_stats["size_bytes"].sum()))
+
+            stage_keys = ["raw", "stg", "int", "marts"]
+            stage_labels = [t(f"home.tech_stage.{stage}") for stage in stage_keys] + [
+                t("home.tech_stage.pages")
+            ]
+            stage_values = [counts_by_schema.get(stage, 0) for stage in stage_keys]
+            lineage_fig = go.Figure(
+                go.Sankey(
+                    node={
+                        "label": stage_labels,
+                        "color": CATEGORICAL[: len(stage_labels)],
+                        "pad": 20,
+                    },
+                    link={
+                        "source": list(range(len(stage_keys))),
+                        "target": list(range(1, len(stage_keys) + 1)),
+                        "value": [*stage_values[1:], _APP_PAGE_COUNT],
+                        "color": "rgba(150, 150, 150, 0.3)",
+                    },
+                )
+            )
+            apply_base_layout(lineage_fig, title=t("home.tech_chart.lineage"), height=280)
+            st.plotly_chart(lineage_fig, width="stretch")
+            chart_explainer(t("home.explain.tech_lineage"))
+
+            table_stats_display = table_stats.with_columns(
+                pl.col("size_bytes")
+                .map_elements(_format_bytes, return_dtype=pl.Utf8)
+                .alias("size"),
+                pl.col("kind").map_elements(
+                    lambda k: t(f"home.tech_table.kind.{k}"), return_dtype=pl.Utf8
+                ),
+            ).select("schema", "table", "kind", "row_estimate", "size")
+            st.dataframe(
+                table_stats_display.rename(
+                    {
+                        "schema": t("home.tech_table.column.schema"),
+                        "table": t("home.tech_table.column.table"),
+                        "kind": t("home.tech_table.column.kind"),
+                        "row_estimate": t("home.tech_table.column.rows"),
+                        "size": t("home.tech_table.column.size"),
+                    }
+                ),
+                width="stretch",
+                hide_index=True,
+            )
 
     date_range = get_global_date_range()
     daily_rollup = get_event_daily_rollup(*date_range) if date_range else pl.DataFrame()

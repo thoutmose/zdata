@@ -102,6 +102,49 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "home.kpi.chatters": "Chatters",
         "home.kpi.messages": "Chat messages",
         "home.kpi.peak_viewers": "Peak concurrent viewers",
+        "home.tech_expander_label": "🔧 Database internals (for data engineers)",
+        "home.tech_caption": (
+            "The warehouse behind every page on this site: how many tables exist "
+            "in each dbt layer, how many rows and how much disk space they hold, "
+            "and how data flows from raw ingestion to the marts every page reads "
+            "from. Collapsed by default — this is data-engineering detail, not "
+            "something every visitor needs."
+        ),
+        "home.tech_no_data": (
+            "This section reflects the real database's own catalog metadata and "
+            "isn't available with mock/demo data."
+        ),
+        "home.tech_kpi.tables": "Tables & views",
+        "home.tech_kpi.rows": "Total rows (estimate)",
+        "home.tech_kpi.size": "Total size on disk",
+        "home.tech_chart.lineage": "Data lineage: dbt layers, by table count",
+        "home.tech_stage.raw": "raw",
+        "home.tech_stage.stg": "stg (staging)",
+        "home.tech_stage.int": "int (intermediate)",
+        "home.tech_stage.marts": "marts",
+        "home.tech_stage.pages": "this app's 14 pages",
+        "home.explain.tech_lineage": (
+            "dbt's own layering, not a per-table dependency graph — Postgres "
+            "doesn't retain the SQL that built a materialized table once it's "
+            "built, so a *table*-level lineage arrow (\"this mart reads exactly "
+            "these 3 int models\") isn't something this page can honestly "
+            "derive from the database alone; that level of detail lives in the "
+            "dbt project's own `manifest.json`, not here. What *is* real: "
+            "`raw` holds untouched ingested data; `stg` normalizes it into a "
+            "consistent shape without changing its meaning; `int` builds "
+            "per-chatter/per-channel/per-hour aggregates from staging; `marts` "
+            "are the query-ready tables every page actually reads from (see "
+            "`app/data/repository.py::PostgresDataSource` for exactly which "
+            "mart backs which chart). Flow width is each stage's real table "
+            "count, from the query below."
+        ),
+        "home.tech_table.column.schema": "Schema",
+        "home.tech_table.column.table": "Table",
+        "home.tech_table.column.kind": "Kind",
+        "home.tech_table.column.rows": "Rows (est.)",
+        "home.tech_table.column.size": "Size",
+        "home.tech_table.kind.table": "table",
+        "home.tech_table.kind.view": "view",
         "home.daily_heading": "Daily trend",
         "home.daily_caption": "Event-wide totals bucketed by day.",
         "home.chart.daily": "Donations per day",
@@ -185,12 +228,37 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "donations.hours_since_start": "hours since event start",
         "donations.editions_y_axis": "€ (log scale)",
         "donations.explain.editions": (
-            "Solid green is this event; gray lines (one dash style per year) are past "
-            "editions, each starting its own clock at hour 0 — a steeper early climb or an "
-            "earlier finish-line crossing shows up directly as one curve pulling ahead of "
-            "another. The y-axis is logarithmic (each gridline is 10x the last) so a past "
-            "edition with a much higher final total doesn't flatten every other curve, "
-            "including this year's own, into the bottom of the chart."
+            "Each year gets its own color; this year's line is drawn thicker, but every "
+            "edition — including this one — starts its own clock at hour 0, so a steeper "
+            "early climb or an earlier finish-line crossing shows up directly as one curve "
+            "pulling ahead of another. The y-axis is logarithmic (each gridline is 10x the "
+            "last) so a past edition with a much higher final total doesn't flatten every "
+            "other curve, including this year's own, into the bottom of the chart."
+        ),
+        "donations.day_evolution_heading": "Day-by-day evolution, across editions",
+        "donations.day_evolution_caption": (
+            "Each \"day\" is a fixed 24-hour window from kickoff (hour 0-24, 24-48, "
+            "48-72) — the same definition for every year, regardless of which real "
+            "weekday it fell on. \"Partial\" means the edition hasn't run that long "
+            "(yet, or ever) — its last day's figures cover fewer than 24 real hours."
+        ),
+        "donations.no_day_evolution": "Not enough historical data to break down by day yet.",
+        "donations.column.year": "Year",
+        "donations.column.day": "Day",
+        "donations.column.cumulative": "Total by day's end (€)",
+        "donations.column.delta": "Raised that day (€)",
+        "donations.column.avg_per_hour": "Avg. €/hour that day",
+        "donations.column.status": "Status",
+        "donations.day_complete": "Complete",
+        "donations.day_partial": "Partial (in progress)",
+        "donations.explain.day_evolution": (
+            "\"Raised that day\" is the day's own delta, not a running total — day 2's "
+            "figure is *only* what came in during hours 24-48, already excluding day "
+            "1's total. Watch the average €/hour on a \"Partial\" day carefully: every "
+            "edition's donations surge hardest in its final hours (confirmed across "
+            "every year in this table), so a short partial window ending mid-surge can "
+            "show a higher average rate than any complete day before it — a real "
+            "number, not an error, but not a stable rate to extrapolate from either."
         ),
         "donations.explain.pace": (
             "How much was raised in each individual hour (not cumulative). Spikes usually "
@@ -1140,6 +1208,114 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about.pipeline.marts": "Query-ready marts — the tables this dashboard actually reads from, one or more per page (e.g. the chatter leaderboard, the donation timeseries).",
         "about.pipeline.column_schema": "Schema",
         "about.pipeline.column_purpose": "Purpose",
+        "about.technical_heading": "For data engineers, analysts, and ML engineers",
+        "about.technical_intro": (
+            "The rest of this page is for anyone who wants the actual "
+            "engineering behind these charts, not just what they show. Every "
+            "technique below was chosen and verified against real ZEvent "
+            "data — where something didn't work, that's said plainly, not "
+            "smoothed over."
+        ),
+        "about.technical_dataeng_heading": "Data engineering",
+        "about.technical_dataeng_body": (
+            "**Querying a 8M+-row, unindexed table safely.** "
+            "`stg.stg_bronze__live_chat` (the raw chat firehose) has no index "
+            "and grows continuously through the live event — any per-row "
+            "text function (regex matching, string search) run over it "
+            "directly risks the warehouse's 15-second statement timeout. "
+            "Every query against it instead samples first "
+            "(`WHERE random() < :sample_rate`), *then* runs the expensive "
+            "per-row work only over the sample — cutting the row count "
+            "before the costly part runs, not after.\n\n"
+            "**Point-in-time reads under a live event.** Several charts "
+            "(the donation-forecasting snapshot, leaderboard movers, "
+            "channel timeseries leaderboards) need \"the most recent value "
+            "as of some past moment,\" not just \"the current value\" — "
+            "implemented as `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY "
+            "ingested_at DESC)` filtered to `rn = 1`, scoped to rows at or "
+            "before the cutoff.\n\n"
+            "**Caching, tiered by how fast the data actually changes.** Live "
+            "event queries cache for 60 seconds (`st.cache_data(ttl=60)`); "
+            "database catalog stats (the section above) cache for 5 minutes "
+            "— they change far more slowly than event figures, so a short "
+            "TTL would just re-run the same catalog scan for the same "
+            "answer; past-edition history (fetched externally, frozen "
+            "forever) caches with no TTL at all. A pooled, bounded "
+            "SQLAlchemy `Engine` (`st.cache_resource`) is shared across "
+            "every concurrent session rather than one connection per "
+            "visitor."
+        ),
+        "about.technical_stats_heading": "Statistical & heuristic analysis (Chat Intelligence)",
+        "about.technical_stats_body": (
+            "Chat Intelligence is deliberately dependency-light: word-list "
+            "matching and counting, no trained model. Every word list was "
+            "tested against real chat before being kept — several intuitive "
+            "first guesses for a hostility list (\"con\", \"stupide\", "
+            "\"pourri\") were tried and rejected because real data showed "
+            "them mostly hitting something else entirely (a game title, a "
+            "Twitch emote code, harmless slang). Matching uses a "
+            "*leading*-only word boundary (Postgres' `\\y` anchor on one "
+            "side only), not a plain substring and not a boundary on both "
+            "sides — verified to be the one setting that avoids emote-code "
+            "false positives (`\"melokaIdiot\"`) without also dropping real "
+            "plurals and emphasis-lengthened forms (`\"connards\"`, "
+            "`\"CONNASSEEEE\"`) as false negatives."
+        ),
+        "about.technical_ml_heading": "Real machine learning (Chat ML Lab)",
+        "about.technical_ml_body": (
+            "**Clustering** (`sklearn.cluster.KMeans`) segments both message "
+            "topics (channel-hour-pooled chat, TF-IDF over lemmatized "
+            "unigrams+bigrams) and streamer/chatter behavior (performance and "
+            "activity-shape features, log1p-transformed and standardized "
+            "first — real donation/activity figures are heavily right-skewed, "
+            "confirmed against real data). A 2D PCA projection of the same "
+            "feature space the clustering fit on lets those segments "
+            "actually be *seen*, not just tabulated.\n\n"
+            "**Outlier detection** (`sklearn.ensemble.IsolationForest`) flags "
+            "streamers, chatters, and chat-mood hours whose shape is "
+            "statistically unusual — confirmed to surface both extremes at "
+            "once (the event's biggest fundraisers *and* near-inactive "
+            "placeholder entries), with the expected-outlier-fraction "
+            "exposed as a tunable slider.\n\n"
+            "**Donation forecasting** (`sklearn.ensemble.RandomForestRegressor`) "
+            "predicts a streamer's *eventual final* donation total from a "
+            "snapshot of their own donations/viewers/messages at an earlier, "
+            "real point in time — deliberately not from their own final "
+            "stats, which would be near-tautological. Evaluated honestly on "
+            "a held-out 25% test split, not on the training data.\n\n"
+            "**Pretrained transformer classification** (`transformers`) "
+            "compares real sentiment/toxicity models against the lexicon "
+            "heuristic above. Model choice was verified, not assumed: a "
+            "smaller multilingual toxicity model confidently mislabeled a "
+            "wholesome message as 99% toxic and missed a genuine insult "
+            "entirely, before being swapped for one that got every real test "
+            "message right.\n\n"
+            "**Linguistic analysis** (spaCy's French pipeline) adds "
+            "lemmatization, part-of-speech tagging, dependency parsing, "
+            "named-entity recognition, and both static (word2vec/GloVe-style) "
+            "and contextual (transformer-derived) word/message embeddings. "
+            "NER is the one technique here with an honestly weak spot on this "
+            "text: a generic French model, trained on formal writing, still "
+            "misreads some Twitch emote codes and chat slang as real "
+            "entities even after filtering — stated in the page itself, not "
+            "hidden."
+        ),
+        "about.technical_principles_heading": "Working principles",
+        "about.technical_principles_body": (
+            "1. **Verify against real data before shipping, not just "
+            "documentation.** Several techniques above were tried, found "
+            "wanting on real ZEvent chat, and replaced or filtered — that's "
+            "the normal path, not an exception.\n"
+            "2. **State a model's real limitations in the UI itself.** A "
+            "toxicity flag, an NER hit, or a forecast is a lead to look at "
+            "in context, never presented as a certified verdict.\n"
+            "3. **Design out circularity.** A forecast predicts a genuinely "
+            "*future* value from a genuinely *past* snapshot — never a "
+            "number from a restatement of itself.\n"
+            "4. **Respect the database's real constraints.** Sample before "
+            "the expensive per-row work, not after; a 15-second statement "
+            "timeout is a hard budget, not a suggestion."
+        ),
         "about.infra_heading": "Infrastructure & monitoring",
         "about.infra_body": (
             "The pipeline and its hosting are provisioned as code (infrastructure as "
@@ -1876,6 +2052,54 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "home.kpi.chatters": "Chatteurs",
         "home.kpi.messages": "Messages de chat",
         "home.kpi.peak_viewers": "Pic de viewers simultanés",
+        "home.tech_expander_label": "🔧 Détails de la base de données (pour data engineers)",
+        "home.tech_caption": (
+            "L'entrepôt de données derrière chaque page de ce site : combien de "
+            "tables existent dans chaque couche dbt, combien de lignes et "
+            "d'espace disque elles occupent, et comment les données circulent de "
+            "l'ingestion brute jusqu'aux marts que chaque page lit. Replié par "
+            "défaut — ce sont des détails de data engineering, pas quelque chose "
+            "dont chaque visiteur a besoin."
+        ),
+        "home.tech_no_data": (
+            "Cette section reflète les métadonnées du catalogue de la vraie base "
+            "de données et n'est pas disponible avec des données factices/de "
+            "démonstration."
+        ),
+        "home.tech_kpi.tables": "Tables & vues",
+        "home.tech_kpi.rows": "Lignes totales (estimation)",
+        "home.tech_kpi.size": "Taille totale sur disque",
+        "home.tech_chart.lineage": "Lignage des données : couches dbt, par nombre de tables",
+        "home.tech_stage.raw": "raw",
+        "home.tech_stage.stg": "stg (staging)",
+        "home.tech_stage.int": "int (intermédiaire)",
+        "home.tech_stage.marts": "marts",
+        "home.tech_stage.pages": "les 14 pages de l'application",
+        "home.explain.tech_lineage": (
+            "La structure en couches de dbt elle-même, pas un graphe de "
+            "dépendances table par table — Postgres ne conserve pas le SQL qui a "
+            "construit une table matérialisée une fois qu'elle est construite, "
+            "donc une flèche de lignage au niveau *table* (« ce mart lit "
+            "exactement ces 3 modèles int ») n'est pas quelque chose que cette "
+            "page peut honnêtement déduire de la seule base de données ; ce "
+            "niveau de détail vit dans le `manifest.json` propre au projet dbt, "
+            "pas ici. Ce qui *est* réel : `raw` contient les données ingérées "
+            "brutes et non modifiées ; `stg` les normalise en une forme "
+            "cohérente sans changer leur sens ; `int` construit des agrégats "
+            "par chatteur/par chaîne/par heure à partir du staging ; `marts` "
+            "sont les tables prêtes à interroger que chaque page lit "
+            "effectivement (voir `app/data/repository.py::PostgresDataSource` "
+            "pour savoir exactement quel mart alimente quel graphique). La "
+            "largeur des flux est le vrai nombre de tables de chaque couche, "
+            "issu de la requête ci-dessous."
+        ),
+        "home.tech_table.column.schema": "Schéma",
+        "home.tech_table.column.table": "Table",
+        "home.tech_table.column.kind": "Type",
+        "home.tech_table.column.rows": "Lignes (est.)",
+        "home.tech_table.column.size": "Taille",
+        "home.tech_table.kind.table": "table",
+        "home.tech_table.kind.view": "vue",
         "home.daily_heading": "Tendance quotidienne",
         "home.daily_caption": "Totaux de l'événement, regroupés par jour.",
         "home.chart.daily": "Dons par jour",
@@ -1968,13 +2192,43 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "donations.hours_since_start": "heures depuis le début de l'événement",
         "donations.editions_y_axis": "€ (échelle log)",
         "donations.explain.editions": (
-            "La ligne verte pleine est cet événement ; les lignes grises (un style de "
-            "pointillés par année) sont les éditions précédentes, chacune démarrant son "
-            "propre chronomètre à l'heure 0 — une montée plus rapide en début d'événement ou "
+            "Chaque année a sa propre couleur ; la ligne de cette année est tracée plus "
+            "épaisse, mais chaque édition — y compris celle-ci — démarre son propre "
+            "chronomètre à l'heure 0, donc une montée plus rapide en début d'événement ou "
             "un dépassement de seuil plus précoce se voit directement quand une courbe en "
             "dépasse une autre. L'axe des ordonnées est logarithmique (chaque graduation "
             "correspond à x10) pour qu'une édition au total final bien plus élevé n'aplatisse "
             "pas les autres courbes — y compris celle de cette année — en bas du graphique."
+        ),
+        "donations.day_evolution_heading": "Évolution jour par jour, à travers les éditions",
+        "donations.day_evolution_caption": (
+            "Chaque « jour » est une fenêtre fixe de 24 heures depuis le démarrage "
+            "(heure 0-24, 24-48, 48-72) — la même définition pour chaque année, peu "
+            "importe le jour de semaine réel où elle est tombée. « Partiel » signifie "
+            "que l'édition n'a pas encore duré aussi longtemps (ou jamais) — les "
+            "chiffres de son dernier jour couvrent moins de 24 heures réelles."
+        ),
+        "donations.no_day_evolution": (
+            "Pas encore assez de données historiques pour une répartition par jour."
+        ),
+        "donations.column.year": "Année",
+        "donations.column.day": "Jour",
+        "donations.column.cumulative": "Total en fin de jour (€)",
+        "donations.column.delta": "Récolté ce jour (€)",
+        "donations.column.avg_per_hour": "€/heure moy. ce jour",
+        "donations.column.status": "Statut",
+        "donations.day_complete": "Complet",
+        "donations.day_partial": "Partiel (en cours)",
+        "donations.explain.day_evolution": (
+            "« Récolté ce jour » est le delta propre au jour, pas un total cumulé — le "
+            "chiffre du jour 2 est *uniquement* ce qui est arrivé pendant les heures "
+            "24-48, excluant déjà le total du jour 1. Regardez attentivement la "
+            "moyenne €/heure d'un jour « Partiel » : les dons de chaque édition "
+            "explosent le plus dans ses dernières heures (confirmé pour chaque année "
+            "de ce tableau), donc une courte fenêtre partielle se terminant en plein "
+            "pic peut afficher un taux moyen plus élevé que n'importe quel jour "
+            "complet précédent — un chiffre réel, pas une erreur, mais pas non plus "
+            "un taux stable à extrapoler."
         ),
         "donations.explain.pace": (
             "Ce qui a été collecté durant chaque heure individuelle (pas cumulé). Les pics "
@@ -3015,6 +3269,129 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         ),
         "about.pipeline.column_schema": "Schéma",
         "about.pipeline.column_purpose": "Rôle",
+        "about.technical_heading": "Pour data engineers, analystes et ML engineers",
+        "about.technical_intro": (
+            "Le reste de cette page s'adresse à qui veut la vraie ingénierie "
+            "derrière ces graphiques, pas seulement ce qu'ils montrent. Chaque "
+            "technique ci-dessous a été choisie et vérifiée sur de vraies "
+            "données ZEvent — là où quelque chose n'a pas fonctionné, c'est dit "
+            "franchement, pas lissé."
+        ),
+        "about.technical_dataeng_heading": "Ingénierie des données",
+        "about.technical_dataeng_body": (
+            "**Interroger une table de 8M+ lignes, sans index, en sécurité.** "
+            "`stg.stg_bronze__live_chat` (le flux brut du chat) n'a pas "
+            "d'index et grossit en continu pendant l'événement en direct — "
+            "toute fonction texte par ligne (correspondance regex, recherche "
+            "de chaîne) exécutée directement dessus risque le délai "
+            "d'expiration de 15 secondes de l'entrepôt. Chaque requête contre "
+            "elle échantillonne d'abord (`WHERE random() < :sample_rate`), "
+            "*puis* n'exécute le travail coûteux par ligne que sur "
+            "l'échantillon — réduisant le nombre de lignes avant la partie "
+            "coûteuse, pas après.\n\n"
+            "**Lectures à un instant T sous un événement en direct.** "
+            "Plusieurs graphiques (l'instantané de prévision des dons, les "
+            "mouvements du classement, les classements en série temporelle "
+            "par chaîne) ont besoin de « la valeur la plus récente à un "
+            "instant passé », pas juste « la valeur actuelle » — implémenté "
+            "via `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ingested_at "
+            "DESC)` filtré à `rn = 1`, restreint aux lignes à ou avant "
+            "l'instant choisi.\n\n"
+            "**Mise en cache, échelonnée selon la vitesse réelle de "
+            "changement des données.** Les requêtes de l'événement en direct "
+            "sont mises en cache 60 secondes (`st.cache_data(ttl=60)`) ; les "
+            "statistiques du catalogue de la base (section ci-dessus) sont "
+            "mises en cache 5 minutes — elles changent bien plus lentement "
+            "que les chiffres de l'événement, donc un TTL court ne ferait que "
+            "relancer le même scan de catalogue pour la même réponse ; "
+            "l'historique des éditions passées (récupéré en externe, figé "
+            "pour toujours) est mis en cache sans aucun TTL. Un `Engine` "
+            "SQLAlchemy mutualisé et borné (`st.cache_resource`) est partagé "
+            "entre toutes les sessions concurrentes plutôt qu'une connexion "
+            "par visiteur."
+        ),
+        "about.technical_stats_heading": "Analyse statistique et heuristique (Chat Intelligence)",
+        "about.technical_stats_body": (
+            "Chat Intelligence est délibérément léger en dépendances : "
+            "correspondance de listes de mots et comptage, pas de modèle "
+            "entraîné. Chaque liste de mots a été testée sur de vrais "
+            "messages avant d'être conservée — plusieurs premières "
+            "suppositions intuitives pour une liste d'hostilité (« con », "
+            "« stupide », « pourri ») ont été essayées puis rejetées car les "
+            "données réelles montraient qu'elles touchaient surtout autre "
+            "chose (un titre de jeu, un code d'emote Twitch, de l'argot "
+            "inoffensif). La correspondance utilise une limite de mot "
+            "*seulement en tête* (l'ancre `\\y` de Postgres, d'un seul côté), "
+            "ni une simple sous-chaîne ni une limite des deux côtés — "
+            "vérifié comme étant le seul réglage qui évite les faux positifs "
+            "de codes d'emotes (`\"melokaIdiot\"`) sans pour autant perdre de "
+            "vrais pluriels et des formes allongées par emphase "
+            "(`\"connards\"`, `\"CONNASSEEEE\"`) comme faux négatifs."
+        ),
+        "about.technical_ml_heading": "Vrai apprentissage automatique (Chat ML Lab)",
+        "about.technical_ml_body": (
+            "**Clustering** (`sklearn.cluster.KMeans`) segmente à la fois les "
+            "sujets de messages (chat regroupé par heure-chaîne, TF-IDF sur "
+            "des unigrammes+bigrammes lemmatisés) et le comportement des "
+            "streamers/chatteurs (variables de forme de performance et "
+            "d'activité, transformées en log1p puis standardisées — les "
+            "vrais chiffres de dons/activité sont fortement asymétriques, "
+            "vérifié sur données réelles). Une projection ACP en 2D du même "
+            "espace de variables sur lequel le clustering a été ajusté rend "
+            "ces segments réellement *visibles*, pas seulement tabulés.\n\n"
+            "**Détection d'anomalies** (`sklearn.ensemble.IsolationForest`) "
+            "signale les streamers, chatteurs et heures d'ambiance de chat "
+            "dont la forme est statistiquement inhabituelle — vérifié pour "
+            "faire remonter les deux extrêmes à la fois (les plus gros "
+            "collecteurs de fonds de l'événement *et* les entrées "
+            "quasi-inactives), avec la fraction d'anomalies attendue exposée "
+            "comme curseur ajustable.\n\n"
+            "**Prévision des dons** (`sklearn.ensemble.RandomForestRegressor`) "
+            "prédit le total final de dons d'un streamer à partir d'un "
+            "instantané de ses propres dons/viewers/messages à un instant "
+            "antérieur réel — délibérément pas à partir de ses propres "
+            "statistiques finales, ce qui serait quasi tautologique. Évalué "
+            "honnêtement sur un jeu de test de 25 % mis de côté, pas sur les "
+            "données d'entraînement.\n\n"
+            "**Classification par transformer pré-entraîné** (`transformers`) "
+            "compare de vrais modèles de sentiment/toxicité à l'heuristique "
+            "par liste de mots ci-dessus. Le choix du modèle a été vérifié, "
+            "pas supposé : un modèle de toxicité multilingue plus petit a "
+            "classé avec confiance un message bienveillant comme toxique à "
+            "99 % et manqué une véritable insulte, avant d'être remplacé par "
+            "un modèle qui a obtenu tous les vrais messages de test "
+            "correctement.\n\n"
+            "**Analyse linguistique** (pipeline français de spaCy) ajoute la "
+            "lemmatisation, l'étiquetage grammatical, l'analyse syntaxique en "
+            "dépendances, la reconnaissance d'entités nommées, et des "
+            "plongements de mots/messages à la fois statiques (façon "
+            "word2vec/GloVe) et contextuels (dérivés d'un transformer). La "
+            "NER est la seule technique ici avec un vrai point faible sur ce "
+            "texte : un modèle français généraliste, entraîné sur de "
+            "l'écriture formelle, continue de lire certains codes d'emotes "
+            "Twitch et argot de chat comme de vraies entités même après "
+            "filtrage — dit dans la page elle-même, pas caché."
+        ),
+        "about.technical_principles_heading": "Principes de travail",
+        "about.technical_principles_body": (
+            "1. **Vérifier sur de vraies données avant de livrer, pas "
+            "seulement sur la documentation.** Plusieurs techniques "
+            "ci-dessus ont été essayées, jugées insuffisantes sur du vrai "
+            "chat ZEvent, puis remplacées ou filtrées — c'est le chemin "
+            "normal, pas une exception.\n"
+            "2. **Énoncer les vraies limites d'un modèle dans l'interface "
+            "elle-même.** Un signalement de toxicité, une entité NER ou une "
+            "prévision est une piste à examiner en contexte, jamais présentée "
+            "comme un verdict certifié.\n"
+            "3. **Concevoir pour éliminer la circularité.** Une prévision "
+            "prédit une valeur réellement *future* à partir d'un instantané "
+            "réellement *passé* — jamais un nombre à partir d'une "
+            "reformulation de lui-même.\n"
+            "4. **Respecter les vraies contraintes de la base de données.** "
+            "Échantillonner avant le travail coûteux par ligne, pas après ; "
+            "un délai d'expiration de 15 secondes est un budget strict, pas "
+            "une suggestion."
+        ),
         "about.infra_heading": "Infrastructure & supervision",
         "about.infra_body": (
             "Le pipeline et son hébergement sont provisionnés en code "

@@ -23,7 +23,6 @@ from app.components.filters import (
 )
 from app.components.theme import (
     CATEGORICAL,
-    CHROME,
     apply_base_layout,
     build_podium_figure,
     build_race_figure,
@@ -33,6 +32,7 @@ from app.core.i18n import t
 from app.core.logging_config import setup_logging
 from app.data.external_donations import (
     KNOWN_EDITION_YEARS,
+    day_boundary_breakdown,
     get_edition_kickoff_time,
     get_historical_donation_curve,
 )
@@ -163,22 +163,14 @@ if len(editions) == 1:
 else:
     st.caption(t("donations.editions_caption"))
     editions_fig = go.Figure()
-    # Emphasis, not categorical: the story is "this year vs. its history," so
-    # only the current edition gets the brand accent — every past edition
-    # shares one muted gray (a different dash style each, since 4 same-color
-    # dotted lines would otherwise only be tellable apart by hovering).
-    _HISTORICAL_DASHES = ["dot", "dash", "longdash", "dashdot"]
-    dash_i = 0
-    for year, curve, is_current in editions:
-        if is_current:
-            line = {"color": CATEGORICAL[0], "width": 3, "dash": "solid"}
-        else:
-            line = {
-                "color": CHROME["text_muted"],
-                "width": 2,
-                "dash": _HISTORICAL_DASHES[dash_i % len(_HISTORICAL_DASHES)],
-            }
-            dash_i += 1
+    # Each year gets its own distinct color (not one shared muted gray) so a
+    # year is identifiable by color alone, not just by hovering — the
+    # current edition still stands out via a thicker line on top of that.
+    for color_i, (year, curve, is_current) in enumerate(editions):
+        line = {
+            "color": CATEGORICAL[color_i % len(CATEGORICAL)],
+            "width": 3 if is_current else 2,
+        }
         editions_fig.add_trace(
             go.Scatter(
                 x=curve["hours_since_start"],
@@ -203,6 +195,46 @@ else:
     )
     st.plotly_chart(editions_fig, width="stretch")
     chart_explainer(t("donations.explain.editions"))
+
+    st.markdown(f"**{t('donations.day_evolution_heading')}**")
+    st.caption(t("donations.day_evolution_caption"))
+    day_rows = [
+        day_boundary_breakdown(curve).with_columns(pl.lit(year).alias("year"))
+        for year, curve, _is_current in editions
+    ]
+    day_rows = [rows for rows in day_rows if not rows.is_empty()]
+    if not day_rows:
+        st.info(t("donations.no_day_evolution"))
+    else:
+        day_evolution = pl.concat(day_rows)
+        day_evolution_display = (
+            day_evolution.with_columns(
+                pl.col("cumulative_amount_eur").round(0),
+                pl.col("delta_eur").round(0),
+                pl.col("avg_per_hour_eur").round(0),
+                pl.col("complete")
+                .map_elements(
+                    lambda c: t("donations.day_complete") if c else t("donations.day_partial"),
+                    return_dtype=pl.Utf8,
+                )
+                .alias("status"),
+            )
+            .select(
+                "year", "day", "cumulative_amount_eur", "delta_eur", "avg_per_hour_eur", "status"
+            )
+            .rename(
+                {
+                    "year": t("donations.column.year"),
+                    "day": t("donations.column.day"),
+                    "cumulative_amount_eur": t("donations.column.cumulative"),
+                    "delta_eur": t("donations.column.delta"),
+                    "avg_per_hour_eur": t("donations.column.avg_per_hour"),
+                    "status": t("donations.column.status"),
+                }
+            )
+        )
+        st.dataframe(day_evolution_display, width="stretch", hide_index=True)
+        chart_explainer(t("donations.explain.day_evolution"))
 
 pace_fig = go.Figure(
     go.Bar(
