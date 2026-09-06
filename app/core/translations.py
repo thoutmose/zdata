@@ -129,14 +129,23 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "built, so a *table*-level lineage arrow (\"this mart reads exactly "
             "these 3 int models\") isn't something this page can honestly "
             "derive from the database alone; that level of detail lives in the "
-            "dbt project's own `manifest.json`, not here. What *is* real: "
-            "`raw` holds untouched ingested data; `stg` normalizes it into a "
+            "dbt project's own `manifest.json`, not this app's own read-only "
+            "connection to the warehouse it built. What *is* real: `raw` "
+            "holds untouched ingested data; `stg` normalizes it into a "
             "consistent shape without changing its meaning; `int` builds "
             "per-chatter/per-channel/per-hour aggregates from staging; `marts` "
             "are the query-ready tables every page actually reads from (see "
             "`app/data/repository.py::PostgresDataSource` for exactly which "
             "mart backs which chart). Flow width is each stage's real table "
-            "count, from the query below."
+            "count, from the query below. For the real per-model lineage "
+            "graph, see dbt's own generated docs below, if hosted."
+        ),
+        "home.tech_dbt_docs_button": "📖 Open dbt docs (real per-model lineage)",
+        "home.tech_dbt_docs_hint": (
+            "No `dbt docs` build is linked yet. Run `dbt docs generate` in the "
+            "warehouse project, host the output (even a plain static file "
+            "server works), and set `DBT_DOCS_URL` in this app's `.env` to "
+            "show a link to it here."
         ),
         "home.tech_table.column.schema": "Schema",
         "home.tech_table.column.table": "Table",
@@ -2083,15 +2092,27 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "exactement ces 3 modèles int ») n'est pas quelque chose que cette "
             "page peut honnêtement déduire de la seule base de données ; ce "
             "niveau de détail vit dans le `manifest.json` propre au projet dbt, "
-            "pas ici. Ce qui *est* réel : `raw` contient les données ingérées "
-            "brutes et non modifiées ; `stg` les normalise en une forme "
-            "cohérente sans changer leur sens ; `int` construit des agrégats "
-            "par chatteur/par chaîne/par heure à partir du staging ; `marts` "
-            "sont les tables prêtes à interroger que chaque page lit "
-            "effectivement (voir `app/data/repository.py::PostgresDataSource` "
-            "pour savoir exactement quel mart alimente quel graphique). La "
-            "largeur des flux est le vrai nombre de tables de chaque couche, "
-            "issu de la requête ci-dessous."
+            "pas dans la connexion en lecture seule de cette application à "
+            "l'entrepôt qu'il a construit. Ce qui *est* réel : `raw` contient "
+            "les données ingérées brutes et non modifiées ; `stg` les "
+            "normalise en une forme cohérente sans changer leur sens ; `int` "
+            "construit des agrégats par chatteur/par chaîne/par heure à "
+            "partir du staging ; `marts` sont les tables prêtes à interroger "
+            "que chaque page lit effectivement (voir "
+            "`app/data/repository.py::PostgresDataSource` pour savoir "
+            "exactement quel mart alimente quel graphique). La largeur des "
+            "flux est le vrai nombre de tables de chaque couche, issu de la "
+            "requête ci-dessous. Pour le vrai graphe de lignage par modèle, "
+            "voir la documentation générée par dbt ci-dessous, si elle est "
+            "hébergée."
+        ),
+        "home.tech_dbt_docs_button": "📖 Ouvrir les docs dbt (vrai lignage par modèle)",
+        "home.tech_dbt_docs_hint": (
+            "Aucune documentation dbt n'est encore reliée. Lancez `dbt docs "
+            "generate` dans le projet d'entrepôt, hébergez le résultat (même "
+            "un simple serveur de fichiers statiques suffit), et définissez "
+            "`DBT_DOCS_URL` dans le `.env` de cette application pour afficher "
+            "un lien ici."
         ),
         "home.tech_table.column.schema": "Schéma",
         "home.tech_table.column.table": "Table",

@@ -84,8 +84,13 @@ st.caption(t("chatml.topics_caption"))
 topics_k = st.slider(
     t("chatml.topics_n_clusters"), min_value=3, max_value=12, value=8, key="chatml_topics_k"
 )
+# 40,000, not 200,000: this sample feeds spaCy (topic-cluster lemmatization,
+# POS tagging, NER, word embeddings below) — measured directly against real
+# chat, 200k messages took over a minute even with unneeded pipeline
+# components disabled, while 40k comfortably finishes in single-digit
+# seconds with no less real diversity across channel-hours to cluster.
 messages_for_topics = (
-    get_chat_message_sample(*date_range, 200_000) if date_range else pl.DataFrame()
+    get_chat_message_sample(*date_range, 40_000) if date_range else pl.DataFrame()
 )
 messages_for_topics = apply_global_streamer_filter(messages_for_topics)
 selected_chatter_names = get_global_chatter_names()

@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     db_pool_recycle_s: int = 1800
     db_statement_timeout_ms: int = 15_000
 
+    # Set once a `dbt docs generate` build is hosted somewhere reachable
+    # (this app has no access to the dbt project's own manifest.json/
+    # target/ output by itself — it lives in a separate repo, `zevent-db`)
+    # — the Home page's data-engineering section links to it when set.
+    dbt_docs_url: str | None = None
+
     @computed_field
     @property
     def has_db_credentials(self) -> bool:

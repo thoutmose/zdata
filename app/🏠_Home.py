@@ -194,22 +194,42 @@ def _render_home() -> None:
             apply_base_layout(lineage_fig, title=t("home.tech_chart.lineage"), height=280)
             st.plotly_chart(lineage_fig, width="stretch")
             chart_explainer(t("home.explain.tech_lineage"))
+            if settings.dbt_docs_url:
+                st.link_button(t("home.tech_dbt_docs_button"), settings.dbt_docs_url)
+            else:
+                st.caption(t("home.tech_dbt_docs_hint"))
 
+            # `map_elements` silently skips `null` cells (never calls the
+            # mapping function, just re-emits `null`) — without the
+            # explicit `is_null()` branch below, every view and
+            # never-analyzed table (see `schema_table_stats`'s docstring)
+            # would render as the literal text "None" rather than "—",
+            # since Streamlit's dataframe widget shows missing values in a
+            # string column that way.
             table_stats_display = table_stats.with_columns(
-                pl.col("size_bytes")
-                .map_elements(_format_bytes, return_dtype=pl.Utf8)
+                pl.when(pl.col("size_bytes").is_null())
+                .then(pl.lit("—"))
+                .otherwise(
+                    pl.col("size_bytes").map_elements(_format_bytes, return_dtype=pl.Utf8)
+                )
                 .alias("size"),
+                pl.when(pl.col("row_estimate").is_null())
+                .then(pl.lit("—"))
+                .otherwise(
+                    pl.col("row_estimate").map_elements(lambda n: f"{n:,}", return_dtype=pl.Utf8)
+                )
+                .alias("rows"),
                 pl.col("kind").map_elements(
                     lambda k: t(f"home.tech_table.kind.{k}"), return_dtype=pl.Utf8
                 ),
-            ).select("schema", "table", "kind", "row_estimate", "size")
+            ).select("schema", "table", "kind", "rows", "size")
             st.dataframe(
                 table_stats_display.rename(
                     {
                         "schema": t("home.tech_table.column.schema"),
                         "table": t("home.tech_table.column.table"),
                         "kind": t("home.tech_table.column.kind"),
-                        "row_estimate": t("home.tech_table.column.rows"),
+                        "rows": t("home.tech_table.column.rows"),
                         "size": t("home.tech_table.column.size"),
                     }
                 ),
