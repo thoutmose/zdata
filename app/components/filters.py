@@ -34,6 +34,7 @@ from app.data.repository import (
 _SESSION_KEY = "global_date_range"
 _STREAMER_SESSION_KEY = "global_streamer_filter"
 _CHATTER_SESSION_KEY = "global_chatter_filter"
+_STREAMER_SCOPE_SESSION_KEY = "global_streamer_scope"
 
 
 def render_global_date_filter() -> None:
@@ -104,6 +105,63 @@ def apply_global_date_filter(df: pl.DataFrame, *, timestamp_col: str) -> pl.Data
     return df.filter(pl.col(timestamp_col).is_between(start, end))
 
 
+def render_global_streamer_scope() -> None:
+    """Render the sidebar "streamer scope" slider — top-N streamers counted by default.
+
+    With 300+ streamers registered, "every streamer" is the single biggest
+    lever for how much work every page that reads per-streamer data
+    (rankings, clustering, leaderboards, KPI counts) has to fetch, compute,
+    and render — this is a *speed* control, not just a filter. Defaults to
+    the top 100 by final donation amount (the streamers actually driving
+    the event's numbers), not the full field, so every page is fast by
+    default; explicitly picking a streamer in the filter below always
+    works regardless of this scope — narrowing the default never excludes
+    an explicit choice. Skipped entirely once there are 10 or fewer
+    streamers to begin with (e.g. mock/demo data) — there's no meaningful
+    "top N" to pick from a field that small.
+    """
+    streamers = get_streamer_breakdown()
+    total = len(streamers)
+    if total <= 10:
+        return
+    default_scope = min(100, total)
+    if _STREAMER_SCOPE_SESSION_KEY not in st.session_state:
+        st.session_state[_STREAMER_SCOPE_SESSION_KEY] = default_scope
+    st.sidebar.slider(
+        t("filter.streamer_scope_label"),
+        min_value=10,
+        max_value=total,
+        key=_STREAMER_SCOPE_SESSION_KEY,
+        help=t("filter.streamer_scope_help"),
+    )
+
+
+def get_global_streamer_scope() -> int | None:
+    """Return the current streamer-scope slider value.
+
+    Returns:
+        The chosen top-N size, or `None` if the slider hasn't rendered
+        (too few streamers to matter, or before the sidebar has run once).
+    """
+    return st.session_state.get(_STREAMER_SCOPE_SESSION_KEY)
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _top_streamer_channels(n: int) -> list[str]:
+    """Return the `n` channels with the highest final donation amount.
+
+    Cached at module level (not per-session) — the same top-N-by-donations
+    pool is shared by every session using the same scope, and donation
+    totals don't need sub-minute freshness for the purpose of "who's in
+    scope" (unlike the totals themselves, which read `amount_eur` live
+    elsewhere).
+    """
+    streamers = get_streamer_breakdown()
+    if streamers.is_empty():
+        return []
+    return streamers.sort("amount_eur", descending=True).head(n)["channel"].to_list()
+
+
 def render_global_entity_filters() -> None:
     """Render the sidebar streamer/chatter multiselects, right below the date filter.
 
@@ -149,19 +207,26 @@ def get_global_streamer_filter() -> list[str]:
 
 
 def get_global_streamer_names() -> list[str]:
-    """Return the selected streamers' display names (empty = "all").
+    """Return the in-scope streamers' display names.
 
-    For the handful of accessors (e.g. `leaderboard_movers`) whose result
-    only carries a `streamer` display name, not a `channel` login — resolves
-    the selection via `get_streamer_breakdown()`'s channel-to-name mapping
-    rather than a second widget.
+    An explicit selection in the sidebar filter always wins; otherwise
+    falls back to the top-N-by-donations scope (see
+    `render_global_streamer_scope`) rather than "all" — same fallback
+    `apply_global_streamer_filter` uses, for the handful of accessors
+    (e.g. `leaderboard_movers`) whose result only carries a `streamer`
+    display name, not a `channel` login, and so can't be narrowed by
+    `apply_global_streamer_filter` directly.
     """
-    selected = get_global_streamer_filter()
-    if not selected:
-        return []
     streamers = get_streamer_breakdown()
     name_by_channel = dict(zip(streamers["channel"], streamers["streamer"], strict=True))
-    return [name_by_channel[channel] for channel in selected if channel in name_by_channel]
+    selected = get_global_streamer_filter()
+    if selected:
+        return [name_by_channel[channel] for channel in selected if channel in name_by_channel]
+    scope = get_global_streamer_scope()
+    if scope is None:
+        return []
+    in_scope_channels = _top_streamer_channels(scope)
+    return [name_by_channel[channel] for channel in in_scope_channels if channel in name_by_channel]
 
 
 def get_global_chatter_filter() -> list[str]:
@@ -192,22 +257,28 @@ def get_global_chatter_names() -> list[str]:
 
 
 def apply_global_streamer_filter(df: pl.DataFrame, *, channel_col: str = "channel") -> pl.DataFrame:
-    """Narrow `df` to the globally selected streamers, if any are selected.
+    """Narrow `df` to the in-scope streamers: an explicit selection, or else the top-N scope.
 
     Args:
         df: DataFrame with at least `channel_col`. Returned unfiltered if empty.
         channel_col: Column holding the streamer's `channel` login to filter on.
 
     Returns:
-        `df` filtered to the selected streamers, or `df` unchanged if it's
-        empty or nothing is selected (the "all streamers" default).
+        `df` filtered to the selected streamers if any are explicitly
+        picked; otherwise filtered to the top-N-by-donations scope (see
+        `render_global_streamer_scope`) if that slider has rendered;
+        otherwise `df` unchanged (mock data, or too few streamers for the
+        scope slider to have rendered at all).
     """
     if df.is_empty():
         return df
     selected = get_global_streamer_filter()
-    if not selected:
+    if selected:
+        return df.filter(pl.col(channel_col).is_in(selected))
+    scope = get_global_streamer_scope()
+    if scope is None:
         return df
-    return df.filter(pl.col(channel_col).is_in(selected))
+    return df.filter(pl.col(channel_col).is_in(_top_streamer_channels(scope)))
 
 
 def apply_global_chatter_filter(

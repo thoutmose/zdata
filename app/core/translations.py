@@ -38,6 +38,15 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "it's pre-aggregated with no per-row channel/chatter to filter by."
         ),
         "filter.date_range_label": "📅 Date range",
+        "filter.streamer_scope_label": "🚀 Streamer scope (top N by donations)",
+        "filter.streamer_scope_help": (
+            "Applies across the whole app: every page's rankings, clustering, "
+            "leaderboards, and KPI counts default to this many streamers "
+            "instead of the full field — the single biggest lever for how "
+            "fast every page loads by default. Picking a specific streamer "
+            "below always works regardless of this scope; it only changes "
+            "what \"everyone\" means when nothing is explicitly picked."
+        ),
         "filter.streamer_label": "🎙️ Streamers",
         "filter.chatter_label": "🗣️ Chatters",
         "common.per_hour": "{unit} / hour",
@@ -1620,6 +1629,20 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "answer: what topics does chat actually discover, what behavioral chatter "
             "segments exist, and does a real model even agree with the lexicon?"
         ),
+        "chatml.load_explanation": (
+            "⚡ Nothing below runs automatically. This page fits real models "
+            "(K-Means, Isolation Forest, Random Forest, a French NLP pipeline, "
+            "and — for two sections — large pretrained transformers) over "
+            "tens of thousands of messages — genuinely heavy work, unlike every "
+            "other page here, which reads pre-aggregated marts. Running it on "
+            "every page load, for every visitor, regardless of whether they "
+            "wanted it, would make this the slowest page in the app by far for "
+            "no reason if you're just passing through. Click below when you "
+            "actually want these analyses; the choice stays for the rest of "
+            "your session."
+        ),
+        "chatml.load_button": "▶️ Run Chat ML Lab analyses",
+        "chatml.load_hint": "Waiting for you to click the button above.",
         "chatml.topics_heading": "Message topic clusters",
         "chatml.topics_caption": (
             "Real unsupervised clustering (K-Means over TF-IDF), not keyword ranking — "
@@ -2057,6 +2080,17 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "— ces données sont pré-agrégées, sans ventilation par chaîne/chatteur."
         ),
         "filter.date_range_label": "📅 Plage de dates",
+        "filter.streamer_scope_label": "🚀 Portée des streamers (top N par dons)",
+        "filter.streamer_scope_help": (
+            "S'applique à toute l'application : les classements, le "
+            "clustering, les leaderboards et les compteurs KPI de chaque "
+            "page se limitent par défaut à ce nombre de streamers au lieu "
+            "de la totalité — le levier le plus important pour la rapidité "
+            "de chargement par défaut de chaque page. Choisir un streamer "
+            "précis ci-dessous fonctionne toujours, quelle que soit cette "
+            "portée ; elle change seulement ce que signifie « tout le monde » "
+            "quand rien n'est choisi explicitement."
+        ),
         "filter.streamer_label": "🎙️ Streamers",
         "filter.chatter_label": "🗣️ Chatteurs",
         "common.per_hour": "{unit} / heure",
@@ -3806,6 +3840,21 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "comportementaux existent parmi les chatteurs, et un vrai modèle est-il "
             "seulement d'accord avec la liste de mots ?"
         ),
+        "chatml.load_explanation": (
+            "⚡ Rien ci-dessous ne s'exécute automatiquement. Cette page ajuste "
+            "de vrais modèles (K-Means, Isolation Forest, Random Forest, un "
+            "pipeline NLP français, et — pour deux sections — de gros "
+            "transformers pré-entraînés) sur des dizaines de milliers de "
+            "messages — un vrai travail lourd, contrairement à chaque autre "
+            "page ici, qui lit des marts déjà agrégés. L'exécuter à chaque "
+            "chargement de page, pour chaque visiteur, qu'il le veuille ou "
+            "non, en ferait de loin la page la plus lente de l'application "
+            "sans raison si vous ne faites que passer. Cliquez ci-dessous "
+            "quand vous voulez réellement ces analyses ; le choix reste pour "
+            "le reste de votre session."
+        ),
+        "chatml.load_button": "▶️ Lancer les analyses de Chat ML Lab",
+        "chatml.load_hint": "En attente d'un clic sur le bouton ci-dessus.",
         "chatml.topics_heading": "Clusters de sujets des messages",
         "chatml.topics_caption": (
             "Un vrai clustering non supervisé (K-Means sur TF-IDF), pas un classement "

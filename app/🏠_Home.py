@@ -40,6 +40,7 @@ from app.components.filters import (
     get_global_date_range,
     render_global_date_filter,
     render_global_entity_filters,
+    render_global_streamer_scope,
 )
 from app.components.search import render_global_search
 from app.components.theme import CATEGORICAL, apply_base_layout, inject_global_css
@@ -90,6 +91,7 @@ language_selector()
 with st.sidebar:
     render_global_search()
     render_global_date_filter()
+    render_global_streamer_scope()
     render_global_entity_filters()
 
 
