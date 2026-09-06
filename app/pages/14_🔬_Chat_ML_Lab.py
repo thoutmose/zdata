@@ -81,6 +81,7 @@ date_range = get_global_date_range()
 # --- Section 1: message/topic clustering ---
 st.subheader(t("chatml.topics_heading"))
 st.caption(t("chatml.topics_caption"))
+st.caption(t("chatml.data_used.topics"))
 topics_k = st.slider(
     t("chatml.topics_n_clusters"), min_value=3, max_value=12, value=8, key="chatml_topics_k"
 )
@@ -136,6 +137,7 @@ else:
 # --- Section 1b: linguistic analysis (POS, NER, dependency parse, embeddings) ---
 st.subheader(t("chatml.linguistics_heading"))
 st.caption(t("chatml.linguistics_caption"))
+st.caption(t("chatml.data_used.linguistics"))
 if messages_for_topics.is_empty():
     st.info(t("chatml.no_linguistics"))
 else:
@@ -251,6 +253,7 @@ else:
 # --- Section 2: streamer behavioral clustering ---
 st.subheader(t("chatml.streamers_heading"))
 st.caption(t("chatml.streamers_caption"))
+st.caption(t("chatml.data_used.streamers"))
 streamers_k = st.slider(
     t("chatml.streamers_n_clusters"), min_value=2, max_value=8, value=5, key="chatml_streamers_k"
 )
@@ -283,8 +286,24 @@ else:
     st.dataframe(streamers_summary, width="stretch", hide_index=True)
 
     streamers_pca = pca_projection(clustered_streamers, STREAMER_CLUSTER_FEATURES)
+    all_streamer_cluster_ids = sorted(clustered_streamers["cluster"].unique().to_list())
+    pca_search_col, pca_clusters_col = st.columns([2, 1])
+    with pca_search_col:
+        streamer_search = st.text_input(
+            t("chatml.streamers_pca_search_label"), key="chatml_streamers_pca_search"
+        )
+    with pca_clusters_col:
+        shown_streamer_clusters = st.multiselect(
+            t("chatml.streamers_pca_clusters_label"),
+            options=all_streamer_cluster_ids,
+            default=all_streamer_cluster_ids,
+            format_func=lambda c: f"#{c}",
+            key="chatml_streamers_pca_clusters",
+        )
     streamers_scatter = go.Figure()
-    for cluster_id in sorted(clustered_streamers["cluster"].unique().to_list()):
+    for cluster_id in all_streamer_cluster_ids:
+        if cluster_id not in shown_streamer_clusters:
+            continue
         mask = (clustered_streamers["cluster"] == cluster_id).to_numpy()
         cluster_rows = clustered_streamers.filter(pl.col("cluster") == cluster_id)
         streamers_scatter.add_trace(
@@ -299,6 +318,40 @@ else:
                 hovertemplate="%{text} (%{customdata})<extra></extra>",
             )
         )
+    streamer_search_query = streamer_search.strip().lower()
+    if streamer_search_query:
+        shown_mask = clustered_streamers["cluster"].is_in(shown_streamer_clusters).to_numpy()
+        name_hit = clustered_streamers["streamer"].str.to_lowercase().str.contains(
+            streamer_search_query, literal=True
+        )
+        channel_hit = clustered_streamers["channel"].str.to_lowercase().str.contains(
+            streamer_search_query, literal=True
+        )
+        match_mask = (name_hit | channel_hit).to_numpy() & shown_mask
+        n_streamer_matches = int(match_mask.sum())
+        if n_streamer_matches:
+            matched_streamers = clustered_streamers.filter(pl.Series(match_mask))
+            # A dedicated highlight trace, added last (drawn on top): bigger,
+            # gold, black-outlined markers with the name always shown, not
+            # just on hover — the whole point of "find X in the crowd".
+            streamers_scatter.add_trace(
+                go.Scatter(
+                    x=streamers_pca[match_mask, 0],
+                    y=streamers_pca[match_mask, 1],
+                    mode="markers+text",
+                    name=t("chatml.streamers_pca_search_label"),
+                    marker={"size": 16, "color": "#FFD700", "line": {"color": "black", "width": 2}},
+                    text=matched_streamers["streamer"],
+                    textposition="top center",
+                    textfont={"size": 11, "color": "#FFD700"},
+                    customdata=matched_streamers["channel"],
+                    hovertemplate="%{text} (%{customdata})<extra></extra>",
+                    showlegend=False,
+                )
+            )
+            st.caption(t("chatml.streamers_pca_match_count", n=n_streamer_matches))
+        else:
+            st.caption(t("chatml.streamers_pca_no_match", query=streamer_search))
     apply_base_layout(streamers_scatter, title=t("chatml.chart.streamers_pca"), height=440)
     streamers_scatter.update_xaxes(title_text=t("chatml.column.pca1"))
     streamers_scatter.update_yaxes(title_text=t("chatml.column.pca2"))
@@ -339,6 +392,7 @@ else:
 # --- Section 3: chatter behavioral clustering ---
 st.subheader(t("chatml.chatters_heading"))
 st.caption(t("chatml.chatters_caption"))
+st.caption(t("chatml.data_used.chatters"))
 chatters_k = st.slider(
     t("chatml.chatters_n_clusters"), min_value=2, max_value=8, value=5, key="chatml_chatters_k"
 )
@@ -374,8 +428,24 @@ else:
     st.dataframe(chatters_summary, width="stretch", hide_index=True)
 
     chatters_pca = pca_projection(clustered_chatters, CHATTER_CLUSTER_FEATURES)
+    all_chatter_cluster_ids = sorted(clustered_chatters["cluster"].unique().to_list())
+    chatter_pca_search_col, chatter_pca_clusters_col = st.columns([2, 1])
+    with chatter_pca_search_col:
+        chatter_search = st.text_input(
+            t("chatml.chatters_pca_search_label"), key="chatml_chatters_pca_search"
+        )
+    with chatter_pca_clusters_col:
+        shown_chatter_clusters = st.multiselect(
+            t("chatml.chatters_pca_clusters_label"),
+            options=all_chatter_cluster_ids,
+            default=all_chatter_cluster_ids,
+            format_func=lambda c: f"#{c}",
+            key="chatml_chatters_pca_clusters",
+        )
     chatters_scatter = go.Figure()
-    for cluster_id in sorted(clustered_chatters["cluster"].unique().to_list()):
+    for cluster_id in all_chatter_cluster_ids:
+        if cluster_id not in shown_chatter_clusters:
+            continue
         mask = (clustered_chatters["cluster"] == cluster_id).to_numpy()
         chatters_scatter.add_trace(
             go.Scatter(
@@ -388,6 +458,33 @@ else:
                 hovertemplate="%{text}<extra></extra>",
             )
         )
+    chatter_search_query = chatter_search.strip().lower()
+    if chatter_search_query:
+        shown_mask = clustered_chatters["cluster"].is_in(shown_chatter_clusters).to_numpy()
+        name_hit = clustered_chatters["chatter"].str.to_lowercase().str.contains(
+            chatter_search_query, literal=True
+        )
+        match_mask = name_hit.to_numpy() & shown_mask
+        n_chatter_matches = int(match_mask.sum())
+        if n_chatter_matches:
+            matched_chatters = clustered_chatters.filter(pl.Series(match_mask))
+            chatters_scatter.add_trace(
+                go.Scatter(
+                    x=chatters_pca[match_mask, 0],
+                    y=chatters_pca[match_mask, 1],
+                    mode="markers+text",
+                    name=t("chatml.chatters_pca_search_label"),
+                    marker={"size": 12, "color": "#FFD700", "line": {"color": "black", "width": 2}},
+                    text=matched_chatters["chatter"],
+                    textposition="top center",
+                    textfont={"size": 11, "color": "#FFD700"},
+                    hovertemplate="%{text}<extra></extra>",
+                    showlegend=False,
+                )
+            )
+            st.caption(t("chatml.chatters_pca_match_count", n=n_chatter_matches))
+        else:
+            st.caption(t("chatml.chatters_pca_no_match", query=chatter_search))
     apply_base_layout(chatters_scatter, title=t("chatml.chart.chatters_pca"), height=440)
     chatters_scatter.update_xaxes(title_text=t("chatml.column.pca1"))
     chatters_scatter.update_yaxes(title_text=t("chatml.column.pca2"))
@@ -428,6 +525,7 @@ else:
 # --- Section 4: outlier detection ---
 st.subheader(t("chatml.outliers_heading"))
 st.caption(t("chatml.outliers_caption"))
+st.caption(t("chatml.data_used.outliers"))
 outliers_target_streamers = t("chatml.outliers_target_streamers")
 outliers_target_chatters = t("chatml.outliers_target_chatters")
 outliers_target_hours = t("chatml.outliers_target_hours")
@@ -518,6 +616,7 @@ chart_explainer(t("chatml.explain.outliers"))
 # --- Section 5: ML sentiment/toxicity vs. lexicon heuristic ---
 st.subheader(t("chatml.classify_heading"))
 st.caption(t("chatml.classify_caption"))
+st.caption(t("chatml.data_used.classify"))
 if st.button(t("chatml.classify_button"), key="chatml_run_classify"):
     with st.spinner(t("chatml.classify_spinner")):
         toxic_sample = (
@@ -572,6 +671,7 @@ else:
 # --- Section 6: donation forecasting from a mid-event snapshot ---
 st.subheader(t("chatml.forecast_heading"))
 st.caption(t("chatml.forecast_caption"))
+st.caption(t("chatml.data_used.forecast"))
 if date_range is None:
     st.info(t("chatml.no_forecast"))
 else:

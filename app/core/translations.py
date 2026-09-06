@@ -1613,12 +1613,17 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "Twitch-plays-style voting moment, a channel's own emote-heavy banter, "
             "donation-goal talk, ...) rather than just counting words."
         ),
+        "chatml.data_used.topics": (
+            "🔧 Method: TF-IDF (lemmatized unigrams + bigrams) + K-Means. 📊 Data: up "
+            "to 40,000 sampled messages, pooled by channel-hour, narrowed by the "
+            "sidebar's streamer/chatter filters."
+        ),
         "chatml.topics_n_clusters": "Number of topic clusters",
         "chatml.no_topics": "Not enough messages in the selected range to form topic clusters yet.",
         "chatml.chart.topics": "Topic cluster sizes (channel-hours)",
         "chatml.column.cluster": "Cluster",
         "chatml.column.channel_hours": "Channel-hours",
-        "chatml.column.top_terms": "Top terms",
+        "chatml.column.top_terms": "Top terms (with lemmatization)",
         "chatml.explain.topics": (
             "Each channel-hour with enough sampled messages becomes one TF-IDF "
             "\"document\"; K-Means groups similar documents together. A cluster's "
@@ -1646,6 +1651,14 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "embeddings. Every technique here was run against real ZEvent chat "
             "before being kept — see each subsection's \"How to read this chart\" "
             "for what worked and, honestly, what didn't."
+        ),
+        "chatml.data_used.linguistics": (
+            "🔧 Method: spaCy's French pipeline (`fr_core_news_md`). 📊 Data: the "
+            "same up-to-40,000-message sample as the topic clusters above — POS "
+            "tagging/NER/word embeddings each further cap it for speed (a few "
+            "thousand messages, stated in their own \"How to read this chart\"); "
+            "contextual embeddings use a separate, much smaller 150-message "
+            "sample, fetched fresh only when you click its button."
         ),
         "chatml.no_linguistics": "Not enough messages in the selected range to run linguistic analysis.",
         "chatml.pos_heading": "Part-of-speech distribution",
@@ -1744,6 +1757,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "streamers by how their event went, not by category or team (there is no "
             "team dimension in this data)."
         ),
+        "chatml.data_used.streamers": (
+            "🔧 Method: K-Means clustering (log1p-scaled, standardized features) + "
+            "PCA for the 2D chart below. 📊 Data: every streamer matching the "
+            "sidebar's streamer filter — no further sampling."
+        ),
         "chatml.streamers_n_clusters": "Number of behavioral segments",
         "chatml.no_streamers_ml": (
             "Not enough streamers in the selected range to form behavioral segments yet."
@@ -1772,6 +1790,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "stick around — richer than a fixed \"sedentary / nomadic\" label since "
             "the segments are discovered from the data itself, not defined ahead of "
             "time. Likely-bot accounts are excluded first."
+        ),
+        "chatml.data_used.chatters": (
+            "🔧 Method: K-Means clustering + PCA for the 2D chart below. 📊 Data: "
+            "every chatter matching the sidebar's date-range/streamer/chatter "
+            "filters, with likely bots removed."
         ),
         "chatml.chatters_n_clusters": "Number of behavioral segments",
         "chatml.no_chatters": (
@@ -1803,6 +1826,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "near-inactive placeholder entries as \"statistically unusual\" at once — "
             "an outlier isn't automatically a problem, just unusual."
         ),
+        "chatml.data_used.outliers": (
+            "🔧 Method: Isolation Forest. 📊 Data: depends on your choice below — "
+            "streamers, chatters, or chat-mood hours — each narrowed by the "
+            "sidebar's filters the same way its own section above is."
+        ),
         "chatml.outliers_target_label": "Look for outliers among",
         "chatml.outliers_target_streamers": "Streamers",
         "chatml.outliers_target_chatters": "Chatters",
@@ -1832,6 +1860,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "that); click to run. Shows the real channel and chatter — but neither "
             "the model nor the lexicon is a certified classifier, so read a "
             "\"toxic\"/\"hostile\" flag as a lead to check in context, not a verdict."
+        ),
+        "chatml.data_used.classify": (
+            "🔧 Method: two pretrained XLM-R transformer models (sentiment + "
+            "toxicity) vs. the word-list heuristic. 📊 Data: 20 lexicon-flagged + "
+            "30 random messages, narrowed by the sidebar's filters."
         ),
         "chatml.classify_button": "Run ML classification",
         "chatml.classify_spinner": (
@@ -1876,6 +1909,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "similar two streamers' performance shape is, not their raw earnings. "
             "Hover any point for that streamer's name and Twitch channel."
         ),
+        "chatml.streamers_pca_search_label": "🔎 Search a streamer",
+        "chatml.streamers_pca_clusters_label": "Show clusters",
+        "chatml.streamers_pca_no_match": "No streamer name or channel matches \"{query}\".",
+        "chatml.streamers_pca_match_count": "{n} match(es) highlighted in gold.",
         "chatml.explain.streamers_pca": (
             "Three steps turn the 7 raw features "
             "(`amount_eur`, `hours_live`, `avg_viewers`, `peak_viewers`, "
@@ -1904,6 +1941,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "feature space — each dot is one chatter, colored by cluster. Hover "
             "any point for that chatter's name."
         ),
+        "chatml.chatters_pca_search_label": "🔎 Search a chatter",
+        "chatml.chatters_pca_clusters_label": "Show clusters",
+        "chatml.chatters_pca_no_match": "No chatter name matches \"{query}\".",
+        "chatml.chatters_pca_match_count": "{n} match(es) highlighted in gold.",
         "chatml.explain.chatters_pca": (
             "Same log-transform → standardize → project pipeline as the streamer "
             "PCA plot above (see its \"How to read this chart\" for the formulas), "
@@ -1920,6 +1961,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "cutoff — genuinely forecasting an unknown future from a known past, "
             "not predicting a number from itself. Move the slider to see how "
             "forecast accuracy changes the earlier the snapshot is taken."
+        ),
+        "chatml.data_used.forecast": (
+            "🔧 Method: Random Forest regression, evaluated on a 25% held-out test "
+            "split. 📊 Data: every streamer's mid-event snapshot as of the cutoff "
+            "below, narrowed by the sidebar's streamer filter."
         ),
         "chatml.no_forecast": (
             "Not enough streamers in the selected range/filter to fit and evaluate "
@@ -3736,6 +3782,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "bavardage riche en emotes propre à une chaîne, des discussions sur les "
             "objectifs de dons, ...) plutôt que de simplement compter des mots."
         ),
+        "chatml.data_used.topics": (
+            "🔧 Méthode : TF-IDF (unigrammes + bigrammes lemmatisés) + K-Means. "
+            "📊 Données : jusqu'à 40 000 messages échantillonnés, regroupés par "
+            "heure-chaîne, restreints par les filtres streamer/chatteur de la "
+            "barre latérale."
+        ),
         "chatml.topics_n_clusters": "Nombre de clusters de sujets",
         "chatml.no_topics": (
             "Pas assez de messages dans la plage sélectionnée pour former des clusters "
@@ -3744,7 +3796,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "chatml.chart.topics": "Taille des clusters de sujets (heures-chaîne)",
         "chatml.column.cluster": "Cluster",
         "chatml.column.channel_hours": "Heures-chaîne",
-        "chatml.column.top_terms": "Termes principaux",
+        "chatml.column.top_terms": "Termes principaux (avec lemmatisation)",
         "chatml.explain.topics": (
             "Chaque heure-chaîne avec assez de messages échantillonnés devient un "
             "« document » TF-IDF ; K-Means regroupe les documents similaires entre "
@@ -3776,6 +3828,16 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "ZEvent avant d'être conservée — voir le « Comment lire ce graphique » "
             "de chaque sous-section pour ce qui a fonctionné et, honnêtement, ce "
             "qui n'a pas fonctionné."
+        ),
+        "chatml.data_used.linguistics": (
+            "🔧 Méthode : pipeline français de spaCy (`fr_core_news_md`). "
+            "📊 Données : le même échantillon de jusqu'à 40 000 messages que les "
+            "clusters de sujets ci-dessus — le POS tagging/la NER/les plongements "
+            "de mots le restreignent chacun davantage pour la rapidité (quelques "
+            "milliers de messages, indiqué dans leur propre « Comment lire ce "
+            "graphique ») ; les plongements contextuels utilisent un échantillon "
+            "à part, bien plus petit (150 messages), récupéré uniquement quand "
+            "vous cliquez sur son bouton."
         ),
         "chatml.no_linguistics": (
             "Pas assez de messages dans la plage sélectionnée pour lancer "
@@ -3896,6 +3958,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "pas par catégorie ou équipe (il n'y a pas de dimension équipe dans ces "
             "données)."
         ),
+        "chatml.data_used.streamers": (
+            "🔧 Méthode : clustering K-Means (variables en log1p, standardisées) "
+            "+ ACP pour le graphique 2D ci-dessous. 📊 Données : chaque streamer "
+            "correspondant au filtre streamer de la barre latérale — aucun "
+            "échantillonnage supplémentaire."
+        ),
         "chatml.streamers_n_clusters": "Nombre de segments comportementaux",
         "chatml.no_streamers_ml": (
             "Pas assez de streamers dans la plage sélectionnée pour former des "
@@ -3927,6 +3995,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "« sédentaire / nomade » puisque les segments sont découverts à partir des "
             "données elles-mêmes, pas définis à l'avance. Les comptes probablement "
             "bots sont exclus au préalable."
+        ),
+        "chatml.data_used.chatters": (
+            "🔧 Méthode : clustering K-Means + ACP pour le graphique 2D "
+            "ci-dessous. 📊 Données : chaque chatteur correspondant aux filtres "
+            "plage de dates/streamer/chatteur de la barre latérale, bots "
+            "probables exclus."
         ),
         "chatml.chatters_n_clusters": "Nombre de segments comportementaux",
         "chatml.no_chatters": (
@@ -3961,6 +4035,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "fois les plus gros collecteurs de fonds de l'événement et ses entrées "
             "quasi inactives comme « statistiquement inhabituels » à la fois — une "
             "anomalie n'est pas automatiquement un problème, juste inhabituelle."
+        ),
+        "chatml.data_used.outliers": (
+            "🔧 Méthode : Isolation Forest. 📊 Données : selon votre choix "
+            "ci-dessous — streamers, chatteurs, ou heures d'ambiance de chat — "
+            "chacune restreinte par les filtres de la barre latérale, comme sa "
+            "propre section ci-dessus."
         ),
         "chatml.outliers_target_label": "Chercher des anomalies parmi",
         "chatml.outliers_target_streamers": "Streamers",
@@ -4000,6 +4080,13 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "classificateur certifié, donc lisez un signalement "
             "\"toxique\"/\"hostile\" comme une piste à vérifier en contexte, pas "
             "comme un verdict."
+        ),
+        "chatml.data_used.classify": (
+            "🔧 Méthode : deux modèles transformer XLM-R pré-entraînés "
+            "(sentiment + toxicité) vs l'heuristique par liste de mots. "
+            "📊 Données : 20 messages signalés par la liste de mots + 30 "
+            "messages aléatoires, restreints par les filtres de la barre "
+            "latérale."
         ),
         "chatml.classify_button": "Lancer la classification ML",
         "chatml.classify_spinner": (
@@ -4046,6 +4133,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "performance entre deux streamers, pas leurs gains bruts. Survolez un "
             "point pour voir le nom du streamer et sa chaîne Twitch."
         ),
+        "chatml.streamers_pca_search_label": "🔎 Rechercher un streamer",
+        "chatml.streamers_pca_clusters_label": "Afficher les clusters",
+        "chatml.streamers_pca_no_match": "Aucun nom de streamer ou chaîne ne correspond à « {query} ».",
+        "chatml.streamers_pca_match_count": "{n} résultat(s) en surbrillance dorée.",
         "chatml.explain.streamers_pca": (
             "Trois étapes transforment les 7 variables brutes (`amount_eur`, "
             "`hours_live`, `avg_viewers`, `peak_viewers`, `unique_chatters`, "
@@ -4077,6 +4168,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "est un chatteur, coloré selon son cluster. Survolez un point pour "
             "voir le nom du chatteur."
         ),
+        "chatml.chatters_pca_search_label": "🔎 Rechercher un chatteur",
+        "chatml.chatters_pca_clusters_label": "Afficher les clusters",
+        "chatml.chatters_pca_no_match": "Aucun nom de chatteur ne correspond à « {query} ».",
+        "chatml.chatters_pca_match_count": "{n} résultat(s) en surbrillance dorée.",
         "chatml.explain.chatters_pca": (
             "Même pipeline transformation log → standardisation → projection que "
             "le graphique ACP des streamers ci-dessus (voir son « Comment lire ce "
@@ -4096,6 +4191,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "une prédiction d'un nombre à partir de lui-même. Déplacez le curseur "
             "pour voir comment la précision évolue selon la précocité de "
             "l'instantané."
+        ),
+        "chatml.data_used.forecast": (
+            "🔧 Méthode : régression Random Forest, évaluée sur un jeu de test "
+            "de 25 % mis de côté. 📊 Données : l'instantané en cours d'événement "
+            "de chaque streamer à l'instant choisi ci-dessous, restreint par le "
+            "filtre streamer de la barre latérale."
         ),
         "chatml.no_forecast": (
             "Pas assez de streamers dans la plage/le filtre sélectionné pour "

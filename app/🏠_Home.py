@@ -274,21 +274,10 @@ def _render_home() -> None:
     st.divider()
     st.subheader(t("home.pages_heading"))
 
-    page_cards = [
-        (donations_page, "donations.description"),
-        (streamers_page, "streamers.description"),
-        (games_page, "games.description"),
-        (goals_page, "goals.description"),
-        (chat_page, "chat.description"),
-        (community_page, "community.description"),
-        (chatters_page, "chatters.description"),
-        (tracker_page, "tracker.description"),
-        (activity_page, "activity.description"),
-        (messages_page, "messages.description"),
-        (leaderboard_page, "leaderboard.description"),
-        (chatintel_page, "chatintel.description"),
-        (chatml_page, "chatml.description"),
-    ]
+    # Same order as the sidebar nav (`content_pages`, alphabetized by the
+    # current-language title) rather than a separately hand-maintained
+    # list — the two would otherwise drift out of sync, and did.
+    page_cards = [(page, _PAGE_DESCRIPTIONS[page]) for page in content_pages]
     for row_start in range(0, len(page_cards), 3):
         row = st.columns(3)
         for col, (page, desc_key) in zip(row, page_cards[row_start : row_start + 3], strict=False):
@@ -318,6 +307,22 @@ chatintel_page = st.Page(
     "pages/13_🧠_Chat_Intelligence.py", title=t("chatintel.title"), icon="🧠"
 )
 chatml_page = st.Page("pages/14_🔬_Chat_ML_Lab.py", title=t("chatml.title"), icon="🔬")
+
+_PAGE_DESCRIPTIONS = {
+    donations_page: "donations.description",
+    streamers_page: "streamers.description",
+    games_page: "games.description",
+    goals_page: "goals.description",
+    chat_page: "chat.description",
+    community_page: "community.description",
+    chatters_page: "chatters.description",
+    tracker_page: "tracker.description",
+    activity_page: "activity.description",
+    messages_page: "messages.description",
+    leaderboard_page: "leaderboard.description",
+    chatintel_page: "chatintel.description",
+    chatml_page: "chatml.description",
+}
 
 content_pages = sorted(
     [
