@@ -36,6 +36,7 @@ from app.data.anonymize import anonymize_chatters
 from app.data.bot_heuristic import bot_filter_expr
 from app.data.repository import (
     get_chatter_breakdown,
+    get_chatter_breakdown_top_n,
     get_event_bounds,
     get_streamer_breakdown,
     get_top_chatter_per_channel,
@@ -43,6 +44,8 @@ from app.data.repository import (
 
 setup_logging()
 logger = logging.getLogger(__name__)
+
+_DEFAULT_CHATTER_LIMIT = 2000
 
 
 def _page_offset(*, total_rows: int, page_size: int, key: str) -> int:
@@ -159,7 +162,25 @@ streamers = streamers.with_columns(
 )
 
 event_bounds = get_event_bounds()
-chatters = get_chatter_breakdown(*event_bounds) if event_bounds else pl.DataFrame()
+# Fetching every chatter (up to ~460k, most with a handful of messages) is
+# what made this section slow — confirmed directly, the query itself is
+# fast, the cost is transferring/parsing that many rows for a page that
+# only ever ranks/exports the most active ones by default. See the
+# Chatters page's module docstring for the same trade-off.
+show_all_chatters = st.checkbox(
+    t("leaderboard.chatters_show_all", limit=_DEFAULT_CHATTER_LIMIT),
+    value=False,
+    key="leaderboard_chatters_show_all",
+)
+chatters = (
+    (
+        get_chatter_breakdown(*event_bounds)
+        if show_all_chatters
+        else get_chatter_breakdown_top_n(*event_bounds, _DEFAULT_CHATTER_LIMIT)
+    )
+    if event_bounds
+    else pl.DataFrame()
+)
 chatters = apply_global_chatter_filter(chatters)
 fan_per_channel = get_top_chatter_per_channel(*event_bounds) if event_bounds else pl.DataFrame()
 fan_per_channel = apply_global_streamer_filter(fan_per_channel)

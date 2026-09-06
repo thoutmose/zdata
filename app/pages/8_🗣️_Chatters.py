@@ -30,6 +30,7 @@ from app.data.bot_heuristic import bot_filter_expr
 from app.data.repository import (
     get_channel_chatter_breakdown,
     get_chatter_breakdown,
+    get_chatter_breakdown_top_n,
     get_chatter_channel_breakdown,
     get_top_chat_channels,
 )
@@ -37,19 +38,36 @@ from app.data.repository import (
 setup_logging()
 logger = logging.getLogger(__name__)
 
+_DEFAULT_CHATTER_LIMIT = 2000
 
 page_header(t("chatters.title"), "🗣️", t("chatters.description"))
 
 date_range = get_global_date_range()
-df = get_chatter_breakdown(*date_range) if date_range else pl.DataFrame()
+
+# Fetching every chatter (up to ~460k, most with a handful of messages) to
+# support the search box below is what made this page slow — confirmed
+# directly, the query itself is fast, the cost is transferring/parsing that
+# many rows. So this only pays that cost once a search is actually active;
+# otherwise it fetches just the most active chatters, which is what every
+# other control on this page (profile/age/min-messages filters, top-N
+# ranking) realistically narrows down to anyway.
+pending_query = consume_search_query()
+if pending_query:
+    st.session_state["chatters_search_box"] = pending_query
+search_active = bool(st.session_state.get("chatters_search_box", "").strip())
+
+df = (
+    (get_chatter_breakdown(*date_range) if search_active else get_chatter_breakdown_top_n(*date_range, _DEFAULT_CHATTER_LIMIT))
+    if date_range
+    else pl.DataFrame()
+)
 df = apply_global_chatter_filter(df)
 if df.is_empty():
     st.warning(t("chatters.no_data"))
     st.stop()
 
-pending_query = consume_search_query()
-if pending_query:
-    st.session_state["chatters_search_box"] = pending_query
+if not search_active:
+    st.caption(t("chatters.top_n_default_caption", limit=_DEFAULT_CHATTER_LIMIT))
 
 st.subheader(t("chatters.filters"))
 filter_col1, filter_col2, filter_col3, filter_col4, filter_col5 = st.columns(5)

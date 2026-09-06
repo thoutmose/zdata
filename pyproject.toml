@@ -1,5 +1,5 @@
 [project]
-name = "zevent-dataviz"
+name = "zdata"
 version = "0.1.0"
 description = "Data visualization and data-modeling dashboards for ZEvent, built with Streamlit."
 readme = "README.md"

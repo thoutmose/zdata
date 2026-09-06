@@ -1,4 +1,4 @@
-"""ZEvent Dataviz — Streamlit entrypoint: router + landing page.
+"""ZData — Streamlit entrypoint: router + landing page.
 
 Run with `uv run streamlit run app/🏠_Home.py`.
 
@@ -35,8 +35,8 @@ from app.components.chrome import (
     page_footer,
 )
 from app.components.filters import (
-    apply_global_chatter_filter,
     apply_global_streamer_filter,
+    get_global_chatter_filter,
     get_global_date_range,
     render_global_date_filter,
     render_global_entity_filters,
@@ -50,7 +50,7 @@ from app.core.i18n import language_selector, t
 from app.core.logging_config import setup_logging
 from app.data.repository import (
     get_chat_activity_timeseries,
-    get_chatter_breakdown,
+    get_chatter_count,
     get_donation_timeseries,
     get_event_bounds,
     get_event_daily_rollup,
@@ -79,11 +79,11 @@ def _format_bytes(n: int | None) -> str:
     return f"{value:,.1f} TB"
 
 st.set_page_config(
-    page_title="ZEvent Dataviz",
+    page_title="ZData",
     page_icon=str(_FAVICON) if _FAVICON.exists() else "🎮",
     layout="wide",
     menu_items={
-        "About": "ZEvent Dataviz — data-modeling dashboards for the ZEvent charity marathon."
+        "About": "ZData — data-modeling dashboards for the ZEvent charity marathon."
     },
 )
 
@@ -116,8 +116,18 @@ def _render_home() -> None:
     st.subheader(t("home.kpi_heading"))
     streamers = apply_global_streamer_filter(get_streamer_breakdown())
     date_range = get_global_date_range() or get_event_bounds()
-    chatters = get_chatter_breakdown(*date_range) if date_range else pl.DataFrame()
-    chatters = apply_global_chatter_filter(chatters)
+    # An explicit chatter pick in the sidebar is exactly how many chatters
+    # to count — no query needed. Otherwise, count active chatters directly
+    # rather than fetching all ~416,000 rows of the full per-chatter
+    # breakdown just to call `len()` on it: confirmed directly, that cost
+    # ~4.9s for a number nobody looks past; `get_chatter_count` runs the
+    # same underlying join without the enrichment joins/columns/sort a
+    # count never needed, in ~0.2s.
+    selected_chatter_ids = get_global_chatter_filter()
+    if selected_chatter_ids:
+        chatter_count = len(selected_chatter_ids)
+    else:
+        chatter_count = get_chatter_count(*date_range) if date_range else 0
     # Donations/chat-activity/viewership below are event-wide totals with no
     # per-row timestamp or channel column — unaffected by any sidebar filter.
     date_filter_caveat()
@@ -144,7 +154,7 @@ def _render_home() -> None:
     )
     kpi2.metric(t("home.kpi.duration"), duration_display)
     kpi3.metric(t("home.kpi.streamers"), f"{len(streamers):,}" if not streamers.is_empty() else "—")
-    kpi4.metric(t("home.kpi.chatters"), f"{len(chatters):,}" if not chatters.is_empty() else "—")
+    kpi4.metric(t("home.kpi.chatters"), f"{chatter_count:,}" if chatter_count else "—")
     kpi5.metric(
         t("home.kpi.messages"),
         f"{chat_activity['message_count'].sum():,.0f}" if not chat_activity.is_empty() else "—",

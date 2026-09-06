@@ -137,7 +137,7 @@ def page_footer() -> None:
     """
     st.divider()
     try:
-        app_version = version("zevent-dataviz")
+        app_version = version("zdata")
     except PackageNotFoundError:
         app_version = "dev"
     with st.container(horizontal_alignment="center"):

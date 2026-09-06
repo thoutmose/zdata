@@ -16,7 +16,7 @@ from sqlalchemy import URL
 
 
 class Settings(BaseSettings):
-    """Runtime configuration for the ZEvent Dataviz application.
+    """Runtime configuration for the ZData application.
 
     All fields are overridable via environment variables (or a `.env` file in
     the project root) using their upper-cased field name, e.g. `DB_HOST`.

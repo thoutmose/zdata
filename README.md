@@ -1,6 +1,6 @@
 <p align="right"><strong>🇬🇧 English</strong> · <a href="README.fr.md">🇫🇷 Français</a></p>
 
-# ZEvent Dataviz
+# ZData
 
 ![Python](https://img.shields.io/badge/python-3.14-3776AB?logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/streamlit-app-FF4B4B?logo=streamlit&logoColor=white)
@@ -28,7 +28,7 @@ consistently across every page — see [Global filters](#global-filters).
 - [Development](#development)
 - [Security](#security)
 - [Data & methodology](#data--methodology)
-- [Coding philosophy](#coding-philosophy)
+- [Related projects](#related-projects)
 
 ## Overview
 
@@ -57,7 +57,7 @@ is wired up — pages never talk to the database or to the mock data directly.
 ## Project structure
 
 ```
-zevent-dataviz/
+zdata/
 ├── app/
 │   ├── 🏠_Home.py                 # Streamlit entrypoint: sidebar filters/search/language render here
 │   ├── pages/                     # One page per data-modeling topic (see Pages below)
@@ -113,7 +113,7 @@ interpreter automatically).
 
 ```bash
 git clone <this-repo>
-cd zevent-dataviz
+cd zdata
 uv sync                      # installs dependencies into .venv
 cp .env.example .env         # fill in DB credentials once you have them
 uv run streamlit run app/🏠_Home.py
@@ -128,38 +128,38 @@ All configuration is environment variables (or a `.env` file), never
 hardcoded. See [`.env.example`](.env.example) for the full list; the
 database fields:
 
-| Variable | Description | Default |
-|---|---|---|
-| `DB_HOST` | PostgreSQL/PgBouncer host | _unset → mock data_ |
-| `DB_PORT` | PostgreSQL/PgBouncer port | `5432` |
-| `DB_NAME` | Database name | _unset_ |
-| `DB_USER` | Database user (a **read-only** role is strongly recommended) | _unset_ |
-| `DB_PASSWORD` | Database password | _unset_ |
-| `DB_POOL_SIZE` | Base connection pool size | `5` |
-| `DB_MAX_OVERFLOW` | Extra connections allowed under load | `10` |
-| `DB_STATEMENT_TIMEOUT_MS` | Max time a single query may hold a connection | `15000` |
-| `APP_ENV` | `development` or `production` — also selects the [`logging.yml`](logging.yml) profile | `development` |
+| Variable                  | Description                                                                           | Default             |
+| ------------------------- | ------------------------------------------------------------------------------------- | ------------------- |
+| `DB_HOST`                 | PostgreSQL/PgBouncer host                                                             | _unset → mock data_ |
+| `DB_PORT`                 | PostgreSQL/PgBouncer port                                                             | `5432`              |
+| `DB_NAME`                 | Database name                                                                         | _unset_             |
+| `DB_USER`                 | Database user (a **read-only** role is strongly recommended)                          | _unset_             |
+| `DB_PASSWORD`             | Database password                                                                     | _unset_             |
+| `DB_POOL_SIZE`            | Base connection pool size                                                             | `5`                 |
+| `DB_MAX_OVERFLOW`         | Extra connections allowed under load                                                  | `10`                |
+| `DB_STATEMENT_TIMEOUT_MS` | Max time a single query may hold a connection                                         | `15000`             |
+| `APP_ENV`                 | `development` or `production` — also selects the [`logging.yml`](logging.yml) profile | `development`       |
 
 ## Pages
 
 Every page has a language switcher (EN/FR) in the sidebar, translating all UI chrome — see `app/core/translations.py`.
 
-| Page | Topic |
-|---|---|
-| 📈 Donations | Cumulative donations, a top-3 podium, hourly pace, this year vs. past ZEvent editions, an animated donation-race by channel, donation-spike moments, event-phase split, leaderboard movers, data-quality check |
-| 🎙️ Streamers | Rank by donations/engagement/audience; a donation-efficiency-colored correlation scatter; compare up to 4 streamers on a percentile radar chart, chatter-loyalty mix, and hourly viewer pattern; top chatters across the selected streamers |
-| 🎮 Games | Categories played, event-wide concurrent viewership over time, recent stream sessions, and a stream-title leaderboard by messages/donations |
-| 🎯 Donation Goals | The milestone goals ("objectifs") streamers set for donations, by category and by streamer, an adjustable-cutoff amount histogram, and an ambition-vs-reality chart (goal coverage %) |
-| 💬 Live Chat | Chat message volume and engagement rate over time, an animated message-count race by channel, chat-spike moments, a channel×hour activity heatmap, busiest channels, top emotes |
-| 👥 Community | Chatter loyalty and account-age mix, cumulative chatter growth, an hour-by-hour force-directed network graph of shared audiences, most active chatters, shared-audience channel pairs |
-| 🏆 Donation Tracker | Tracks each "donation"-type goal's start/completion/duration — globally across all streamers, and per streamer, with a Gantt-style timeline |
-| 🗣️ Chatters | Chatters page mirroring Streamers: rank by activity/breadth/loyalty, drill into one chatter's per-channel breakdown |
-| 📺 Activity | Per-streamer stream title/category timeline — when and how often a streamer changed what they were playing |
-| 🔎 Chat Messages | Browse and full-text search individual chat messages, with real chatter/channel identity shown |
-| 🥇 Leaderboard | Consolidated top-3 podiums and full rankings pulling together the app's various per-entity leaderboards |
-| 🧠 Chat Intelligence | Lightweight, dependency-free lexicon/heuristic analysis of live chat — hostility/positivity word-lists, hype-emote trends, copy-paste detection, toxicity examples with real chatter/channel identity |
-| 🔬 Chat ML Lab | Real trained ML over chat and streamer/chatter data: message-topic clustering (KMeans + TF-IDF), streamer/chatter behavioral clustering with a 2D PCA scatter, Isolation Forest outlier detection, pretrained-transformer sentiment/toxicity classification compared against the lexicon heuristic, and a Random Forest donation-forecasting model that predicts each streamer's eventual final total from a mid-event snapshot |
-| ℹ️ About | What ZEvent is, what this dashboard does, and how its data pipeline works |
+| Page                 | Topic                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 📈 Donations         | Cumulative donations, a top-3 podium, hourly pace, this year vs. past ZEvent editions, an animated donation-race by channel, donation-spike moments, event-phase split, leaderboard movers, data-quality check                                                                                                                                                                                                                  |
+| 🎙️ Streamers         | Rank by donations/engagement/audience; a donation-efficiency-colored correlation scatter; compare up to 4 streamers on a percentile radar chart, chatter-loyalty mix, and hourly viewer pattern; top chatters across the selected streamers                                                                                                                                                                                     |
+| 🎮 Games             | Categories played, event-wide concurrent viewership over time, recent stream sessions, and a stream-title leaderboard by messages/donations                                                                                                                                                                                                                                                                                     |
+| 🎯 Donation Goals    | The milestone goals ("objectifs") streamers set for donations, by category and by streamer, an adjustable-cutoff amount histogram, and an ambition-vs-reality chart (goal coverage %)                                                                                                                                                                                                                                           |
+| 💬 Live Chat         | Chat message volume and engagement rate over time, an animated message-count race by channel, chat-spike moments, a channel×hour activity heatmap, busiest channels, top emotes                                                                                                                                                                                                                                                 |
+| 👥 Community         | Chatter loyalty and account-age mix, cumulative chatter growth, an hour-by-hour force-directed network graph of shared audiences, most active chatters, shared-audience channel pairs                                                                                                                                                                                                                                           |
+| 🏆 Donation Tracker  | Tracks each "donation"-type goal's start/completion/duration — globally across all streamers, and per streamer, with a Gantt-style timeline                                                                                                                                                                                                                                                                                     |
+| 🗣️ Chatters          | Chatters page mirroring Streamers: rank by activity/breadth/loyalty, drill into one chatter's per-channel breakdown                                                                                                                                                                                                                                                                                                             |
+| 📺 Activity          | Per-streamer stream title/category timeline — when and how often a streamer changed what they were playing                                                                                                                                                                                                                                                                                                                      |
+| 🔎 Chat Messages     | Browse and full-text search individual chat messages, with real chatter/channel identity shown                                                                                                                                                                                                                                                                                                                                  |
+| 🥇 Leaderboard       | Consolidated top-3 podiums and full rankings pulling together the app's various per-entity leaderboards                                                                                                                                                                                                                                                                                                                         |
+| 🧠 Chat Intelligence | Lightweight, dependency-free lexicon/heuristic analysis of live chat — hostility/positivity word-lists, hype-emote trends, copy-paste detection, toxicity examples with real chatter/channel identity                                                                                                                                                                                                                           |
+| 🔬 Chat ML Lab       | Real trained ML over chat and streamer/chatter data: message-topic clustering (KMeans + TF-IDF), streamer/chatter behavioral clustering with a 2D PCA scatter, Isolation Forest outlier detection, pretrained-transformer sentiment/toxicity classification compared against the lexicon heuristic, and a Random Forest donation-forecasting model that predicts each streamer's eventual final total from a mid-event snapshot |
+| ℹ️ About             | What ZEvent is, what this dashboard does, and how its data pipeline works                                                                                                                                                                                                                                                                                                                                                       |
 
 The real warehouse (`raw`/`stg`/`int`/`marts` schemas, dbt-modeled) has no
 "team" dimension for streamers, so streamers are ranked individually rather
@@ -256,8 +256,14 @@ starts — that's accurate, not a bug. Two caveats worth knowing:
 - **No "team" dimension exists** in the warehouse — the Streamers page ranks
   individuals only.
 
-## Coding philosophy
+## Related projects
 
-See [`.claude/skills/karpathy-guidelines/SKILL.md`](.claude/skills/karpathy-guidelines/SKILL.md):
-readable over clever, minimal indirection, no speculative generality. AI
-assistants are **never** listed as commit co-authors in this repository.
+This app is part of a small ecosystem:
+
+- [`zevent-analytics`](https://github.com/thoutmose/zevent-analytics) — the
+  real-time data-streaming pipeline: chat, metadata, and donation extraction
+  routed through Apache NiFi into PostgreSQL.
+- [`zevent-db`](https://github.com/thoutmose/zevent-db) — the dbt warehouse
+  this app reads from (`raw`/`stg`/`int`/`marts`).
+- [`zevent-monitoring-infra`](https://github.com/thoutmose/zevent-monitoring-infra)
+  — infrastructure-as-code, monitoring, and alerting for the whole pipeline.

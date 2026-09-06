@@ -4,23 +4,25 @@ Real ZEvent chat (confirmed against the live warehouse, not assumed from the
 schema) is short — median ~20 characters — dominated by emote-code spam and
 copypasta, almost entirely French, and has no labeled data at all. A generic
 sentiment/topic model trained on other text wouldn't fit this corpus well,
-and — more importantly — a plain regex over `stg.stg_bronze__live_chat`'s
-~7.7M unindexed rows reliably blows past `Settings.db_statement_timeout_ms`
-(confirmed: even a single simple `~` match times out at full scale). So every
-analysis here is lexicon/heuristic ("NLP-lite") rather than a trained model,
-and every event-wide one runs over a random *sample* of the window rather
-than a full scan — see `app/data/repository.py::PostgresDataSource._chat_sample_rate`
-and `app/data/chat_nlp.py` for the exact methods. Sampling alone doesn't
-avoid the underlying cost, though: confirmed via `EXPLAIN (ANALYZE,
-BUFFERS)` against the real warehouse, the table has no index at all, so
-every query scans it in full regardless of the sample rate — cutting the
-sample target 50x changed query time by under 5%. Narrowing the *date
-window* does help, since Postgres can skip a row's expensive regex/
-aggregate work the moment its timestamp fails the (still fully-scanned)
-date check — confirmed: a 66-hour window took ~3s, a 1-hour one ~0.4s.
-That's why every per-message section below defaults to a short recent
-window rather than the sidebar's full selected range, with an explicit
-control to widen it.
+so every analysis here is lexicon/heuristic ("NLP-lite") rather than a
+trained model — see `app/data/chat_lexicons.py`.
+
+Two very different cost profiles below, not one: the hype/sentiment/
+toxicity/mood sections read `int.int_chat__hourly_channel_mood`, a dbt mart
+pre-aggregated to (channel, hour) at build time over the *full*, unsampled
+event — querying it is a scan of a few thousand rows regardless of the
+selected date range, so those four always use the sidebar's full range.
+Everything else here (flagged-message examples, trending phrases/keywords)
+still reads raw `stg.stg_bronze__live_chat` text directly — that table has
+~9M rows and no index, so even a single simple regex over the full event
+window blows past `Settings.db_statement_timeout_ms` (confirmed: a plain
+`~` match times out at full scale). Those sections sample the window (see
+`app/data/repository.py::PostgresDataSource._chat_sample_rate` and
+`app/data/chat_nlp.py`) and default to a short recent window rather than
+the sidebar's full range, with an explicit control to widen it — narrowing
+the *date window* is what actually cuts their load time (confirmed: a
+66-hour window took ~3s, a 1-hour one ~0.4s), since sampling alone doesn't
+avoid the full unindexed scan.
 
 Sentiment and toxicity share one lexicon (`PostgresDataSource._HOSTILE_WORD_CASE`)
 for their "negative" side — both were curated by testing candidate words
@@ -189,7 +191,7 @@ hype_top_n = bounded_top_n_slider(
     default_n=8,
 )
 hype_components = (
-    get_chat_hype_components_timeseries(*analysis_range) if analysis_range else pl.DataFrame()
+    get_chat_hype_components_timeseries(*date_range) if date_range else pl.DataFrame()
 )
 hype_components = apply_global_streamer_filter(hype_components)
 hype_total_weight = hype_w_punct + hype_w_caps + hype_w_emote
@@ -247,8 +249,8 @@ sentiment_top_n = bounded_top_n_slider(
     default_n=8,
 )
 sentiment = (
-    get_channel_sentiment_leaderboard_timeseries(*analysis_range, sentiment_top_n)
-    if analysis_range
+    get_channel_sentiment_leaderboard_timeseries(*date_range, sentiment_top_n)
+    if date_range
     else pl.DataFrame()
 )
 sentiment = apply_global_streamer_filter(sentiment)
@@ -275,8 +277,8 @@ toxicity_top_n = bounded_top_n_slider(
     default_n=8,
 )
 toxicity = (
-    get_channel_toxicity_leaderboard_timeseries(*analysis_range, toxicity_top_n)
-    if analysis_range
+    get_channel_toxicity_leaderboard_timeseries(*date_range, toxicity_top_n)
+    if date_range
     else pl.DataFrame()
 )
 toxicity = apply_global_streamer_filter(toxicity)
@@ -327,7 +329,7 @@ with st.expander(t("chatintel.toxicity_examples_heading"), expanded=True):
 st.subheader(t("chatintel.correlation_heading"))
 st.caption(t("chatintel.correlation_caption"))
 entity_filter_caveat()
-mood = get_chat_mood_timeseries(*analysis_range) if analysis_range else pl.DataFrame()
+mood = get_chat_mood_timeseries(*date_range) if date_range else pl.DataFrame()
 donation_pace = apply_global_date_filter(get_donation_timeseries(), timestamp_col="timestamp")
 if not donation_pace.is_empty():
     donation_pace = donation_pace.with_columns(

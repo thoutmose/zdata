@@ -166,9 +166,9 @@ class DataSource(Protocol):
         round trip — and does the "top N by overall weighted score, full
         per-channel history, global rank" selection itself, in Polars, the
         same way `channel_viewership_leaderboard_timeseries` does it in SQL
-        — see that method's docstring. Every channel-hour with enough
-        sampled messages is included (no `top_n` here — the client picks
-        the top N *after* weighting).
+        — see that method's docstring. Every channel-hour with at least 20
+        messages is included (no `top_n` here — the client picks the top N
+        *after* weighting).
         """
         ...
 
@@ -235,8 +235,8 @@ class DataSource(Protocol):
 
         Unlike the leaderboard methods above, this has no `top_n` and no
         per-channel dimension at all — one hype and one sentiment figure per
-        hour, averaged over every sampled message regardless of channel
-        (see `_chat_sample_rate`). Meant to be joined against
+        hour, averaged (message-count-weighted) over every channel that
+        hour. Meant to be joined against
         `donation_timeseries` (same hourly grain) to see whether chat mood
         and donation pace move together — see the Chat Intelligence page.
         Values run much lower than the leaderboard charts' top-N lines,
@@ -375,6 +375,21 @@ class DataSource(Protocol):
 
     def chatter_breakdown(self, start: datetime, end: datetime) -> pl.DataFrame:
         """Return per-chatter figures for chatters active within `[start, end]`."""
+        ...
+
+    def chatter_breakdown_top_n(self, start: datetime, end: datetime, limit: int) -> pl.DataFrame:
+        """Return the `limit` most active chatters within `[start, end]`, same columns as `chatter_breakdown`.
+
+        For pages that only need a fast default view of the most active
+        chatters (most of the ~460k-chatter universe has single-digit
+        message counts and is rarely what anyone is looking for) — see
+        `PostgresDataSource`'s implementation for why this is much cheaper
+        than `chatter_breakdown` even though it reads the same table.
+        """
+        ...
+
+    def chatter_count(self, start: datetime, end: datetime) -> int:
+        """Return how many distinct chatters were active within `[start, end]`."""
         ...
 
     def chatter_channel_breakdown(self, chatter_id: str) -> pl.DataFrame:
@@ -764,6 +779,16 @@ class MockDataSource:
         df = mock.chatter_breakdown()
         return df.filter((pl.col("first_message_at") <= end) & (pl.col("last_message_at") >= start))
 
+    def chatter_breakdown_top_n(self, start: datetime, end: datetime, limit: int) -> pl.DataFrame:
+        """See `DataSource.chatter_breakdown_top_n`."""
+        return self.chatter_breakdown(start, end).sort("total_message_count", descending=True).head(
+            limit
+        )
+
+    def chatter_count(self, start: datetime, end: datetime) -> int:
+        """See `DataSource.chatter_count`."""
+        return len(self.chatter_breakdown(start, end))
+
     def chatter_channel_breakdown(self, chatter_id: str) -> pl.DataFrame:
         """See `DataSource.chatter_channel_breakdown`."""
         return mock.chatter_channel_breakdown(chatter_id)
@@ -904,14 +929,16 @@ class PostgresDataSource:
         return self._run(query)
 
     def event_phase_breakdown(self) -> pl.DataFrame:
-        """See `DataSource.event_phase_breakdown`."""
+        """See `DataSource.event_phase_breakdown`.
+
+        Reads `marts.mart_event__phase_totals` — a 3-4 row rollup computed
+        once at dbt build time — instead of `GROUP BY`-ing the raw
+        ~4M-row `mart_event__phase_segmentation` on every page load for a
+        result that's only ever 3-4 rows either way.
+        """
         query = sa.text("""
-            SELECT
-                event_phase AS phase,
-                SUM(donation_delta_eur) AS donations_eur,
-                COUNT(DISTINCT twitch_login) AS streamers
-            FROM marts.mart_event__phase_segmentation
-            GROUP BY event_phase
+            SELECT event_phase AS phase, total_donation_delta_eur AS donations_eur, streamer_count AS streamers
+            FROM marts.mart_event__phase_totals
             ORDER BY CASE event_phase
                 WHEN 'opening' THEN 1 WHEN 'middle' THEN 2 WHEN 'final_push' THEN 3 ELSE 4
             END
@@ -923,15 +950,19 @@ class PostgresDataSource:
 
         Compares each streamer's most recent donation rank (as of `end`) to
         their previous one, so this fills in with real movement once
-        donations start flowing.
+        donations start flowing. Reads `int.int_donations__hourly_rank_churn`
+        (grain `twitch_login, hour_bucket`, ~24k rows) instead of the raw
+        ~4M-row `mart_donations__rank_churn` — `rank_change` is already
+        precomputed per hour there, so this is unchanged shape, just a much
+        smaller table to pick "most recent hour at or before `end`" from.
         """
         query = sa.text("""
             WITH latest AS (
                 SELECT DISTINCT ON (twitch_login)
                     twitch_login, display_name, donation_rank, rank_change
-                FROM marts.mart_donations__rank_churn
-                WHERE ingested_at <= :end
-                ORDER BY twitch_login, ingested_at DESC
+                FROM int.int_donations__hourly_rank_churn
+                WHERE hour_bucket <= :end
+                ORDER BY twitch_login, hour_bucket DESC
             )
             SELECT display_name AS streamer, donation_rank, rank_change
             FROM latest
@@ -1226,14 +1257,11 @@ class PostgresDataSource:
         Ranks by `donation_amount_eur` — each streamer's own cumulative
         total, not `total_donation_amount_eur` (event-wide, broadcast onto
         every row) — same distinction as `donation_goal_tracker`'s docstring.
-        `mart_donations__timeseries` snapshots arrive at irregular,
-        sub-hourly intervals with no per-hour grain of its own, so this
-        first takes each streamer's latest snapshot within each hour
-        (`ROW_NUMBER` per `twitch_login, hour_bucket`, filtered to the
-        `[start, end]` window *before* windowing — the same
-        filter-before-window ordering `donation_goal_tracker_global` uses
-        against this same large, unindexed table), then ranks those
-        per-hour totals.
+        Reads `int.int_donations__hourly_channel_activity` (grain
+        `twitch_login, hour_bucket`, ~11k rows), which already carries each
+        streamer's latest snapshot per hour computed once at dbt build time,
+        instead of deriving that from every row of the raw ~4M-row
+        `mart_donations__timeseries` on every page load.
 
         Same "overall top N, full per-channel history" shape as
         `channel_viewership_leaderboard_timeseries` (see its docstring) —
@@ -1244,22 +1272,10 @@ class PostgresDataSource:
         before that filter narrows the result set.
         """
         query = sa.text("""
-            WITH bucketed AS (
-                SELECT
-                    twitch_login,
-                    date_trunc('hour', ingested_at) AS hour_bucket,
-                    donation_amount_eur,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY twitch_login, date_trunc('hour', ingested_at)
-                        ORDER BY ingested_at DESC
-                    ) AS rn
-                FROM marts.mart_donations__timeseries
-                WHERE ingested_at BETWEEN :start AND :end
-            ),
-            latest_per_hour AS (
+            WITH latest_per_hour AS (
                 SELECT twitch_login AS channel, hour_bucket, donation_amount_eur AS amount_eur
-                FROM bucketed
-                WHERE rn = 1
+                FROM int.int_donations__hourly_channel_activity
+                WHERE hour_bucket BETWEEN :start AND :end
             ),
             totals AS (
                 SELECT channel, MAX(amount_eur) AS overall_amount_eur
@@ -1341,28 +1357,24 @@ class PostgresDataSource:
     """
 
     def chat_hype_components_timeseries(self, start: datetime, end: datetime) -> pl.DataFrame:
-        """See `DataSource.chat_hype_components_timeseries`."""
-        sample_rate = self._chat_sample_rate(start, end, target_rows=250_000)
-        query = sa.text(f"""
-            SELECT
-                channel,
-                date_trunc('hour', message_sent_at) AS timestamp,
-                COUNT(*) AS message_count,
-                AVG({self._PUNCT_CASE}) AS punct_rate,
-                AVG({self._CAPS_CASE}) AS caps_rate,
-                AVG({self._HYPE_EMOTE_CASE}) AS emote_rate
-            FROM stg.stg_bronze__live_chat
-            WHERE message_sent_at BETWEEN :start AND :end AND random() < :sample_rate
-            GROUP BY channel, date_trunc('hour', message_sent_at)
-            HAVING COUNT(*) >= 20
+        """See `DataSource.chat_hype_components_timeseries`.
+
+        Reads `int.int_chat__hourly_channel_mood` (grain `channel,
+        hour_bucket`, exact — not sampled) instead of scanning the raw
+        ~8M-row `stg_bronze__live_chat` per page load: that mart applies the
+        same regex/CASE definitions as `app.data.chat_lexicons`, computed
+        once at dbt build time over every row rather than a `random()`
+        sample re-evaluated on every request. `HAVING COUNT(*) >= 20` is
+        already applied when the mart is built, so no noise-floor filter is
+        needed here.
+        """
+        query = sa.text("""
+            SELECT channel, hour_bucket AS timestamp, message_count, punct_rate, caps_rate, emote_rate
+            FROM int.int_chat__hourly_channel_mood
+            WHERE hour_bucket BETWEEN :start AND :end
         """)
         return self._run(
-            query,
-            {
-                "start": start.replace(tzinfo=PARIS),
-                "end": end.replace(tzinfo=PARIS),
-                "sample_rate": sample_rate,
-            },
+            query, {"start": start.replace(tzinfo=PARIS), "end": end.replace(tzinfo=PARIS)}
         )
 
     def channel_sentiment_leaderboard_timeseries(
@@ -1373,26 +1385,19 @@ class PostgresDataSource:
         Positive-word rate (a curated, real-data-verified French/English
         lexicon — "merci", "super", "bravo", "excellent", ... — chosen the
         same way as `_HOSTILE_WORD_CASE`, favoring words confirmed not to
-        collide with emote codes or unrelated words) minus
-        `_HOSTILE_WORD_CASE`'s hostile-word rate, times 100, averaged per
-        hour over a random sample (see `_chat_sample_rate`). Same sampling,
-        `HAVING COUNT(*) >= 20` noise floor, and "overall top N, full
-        history, global rank" shape as `channel_viewership_leaderboard_timeseries`
-        — see its docstring — ranked by *most positive* rather than most
+        collide with emote codes or unrelated words) minus the hostile-word
+        rate, times 100, read from `int.int_chat__hourly_channel_mood`
+        (exact, not sampled — see `chat_hype_components_timeseries`) rather
+        than recomputed per request. Same "overall top N, full history,
+        global rank" shape as `channel_viewership_leaderboard_timeseries` —
+        see its docstring — ranked by *most positive* rather than most
         viewers.
         """
-        sample_rate = self._chat_sample_rate(start, end, target_rows=250_000)
-        query = sa.text(f"""
+        query = sa.text("""
             WITH scored AS (
-                SELECT
-                    channel,
-                    date_trunc('hour', message_sent_at) AS hour_bucket,
-                    100.0 * (AVG({self._POSITIVE_WORD_CASE}) - AVG({self._HOSTILE_WORD_CASE}))
-                        AS sentiment_score
-                FROM stg.stg_bronze__live_chat
-                WHERE message_sent_at BETWEEN :start AND :end AND random() < :sample_rate
-                GROUP BY channel, date_trunc('hour', message_sent_at)
-                HAVING COUNT(*) >= 20
+                SELECT channel, hour_bucket, 100.0 * (positive_rate - hostile_rate) AS sentiment_score
+                FROM int.int_chat__hourly_channel_mood
+                WHERE hour_bucket BETWEEN :start AND :end
             ),
             ranked AS (
                 SELECT
@@ -1418,12 +1423,7 @@ class PostgresDataSource:
         """)
         return self._run(
             query,
-            {
-                "start": start.replace(tzinfo=PARIS),
-                "end": end.replace(tzinfo=PARIS),
-                "sample_rate": sample_rate,
-                "top_n": top_n,
-            },
+            {"start": start.replace(tzinfo=PARIS), "end": end.replace(tzinfo=PARIS), "top_n": top_n},
         )
 
     def channel_toxicity_leaderboard_timeseries(
@@ -1431,10 +1431,10 @@ class PostgresDataSource:
     ) -> pl.DataFrame:
         """See `DataSource.channel_toxicity_leaderboard_timeseries`.
 
-        `_HOSTILE_WORD_CASE`'s rate, times 100, averaged per hour over a
-        random sample (see `_chat_sample_rate`) — same sampling,
-        `HAVING COUNT(*) >= 20` noise floor, and "overall top N, full
-        history, global rank" shape as
+        Hostile-word rate, times 100, read from
+        `int.int_chat__hourly_channel_mood` (exact, not sampled — see
+        `chat_hype_components_timeseries`) rather than recomputed per
+        request. Same "overall top N, full history, global rank" shape as
         `channel_viewership_leaderboard_timeseries` — see its docstring —
         ranked by *highest* hostility rather than most viewers.
 
@@ -1454,17 +1454,11 @@ class PostgresDataSource:
         that avoids these exact words, and can't tell a targeted insult from
         friendly banter.
         """
-        sample_rate = self._chat_sample_rate(start, end, target_rows=250_000)
-        query = sa.text(f"""
+        query = sa.text("""
             WITH scored AS (
-                SELECT
-                    channel,
-                    date_trunc('hour', message_sent_at) AS hour_bucket,
-                    100.0 * AVG({self._HOSTILE_WORD_CASE}) AS toxicity_score
-                FROM stg.stg_bronze__live_chat
-                WHERE message_sent_at BETWEEN :start AND :end AND random() < :sample_rate
-                GROUP BY channel, date_trunc('hour', message_sent_at)
-                HAVING COUNT(*) >= 20
+                SELECT channel, hour_bucket, 100.0 * hostile_rate AS toxicity_score
+                FROM int.int_chat__hourly_channel_mood
+                WHERE hour_bucket BETWEEN :start AND :end
             ),
             ranked AS (
                 SELECT
@@ -1490,12 +1484,7 @@ class PostgresDataSource:
         """)
         return self._run(
             query,
-            {
-                "start": start.replace(tzinfo=PARIS),
-                "end": end.replace(tzinfo=PARIS),
-                "sample_rate": sample_rate,
-                "top_n": top_n,
-            },
+            {"start": start.replace(tzinfo=PARIS), "end": end.replace(tzinfo=PARIS), "top_n": top_n},
         )
 
     def chat_toxicity_examples(self, start: datetime, end: datetime, limit: int) -> pl.DataFrame:
@@ -1503,18 +1492,27 @@ class PostgresDataSource:
 
         Filters on the same word-boundary condition `_HOSTILE_WORD_CASE`
         evaluates as an aggregate, applied directly as a `WHERE` clause here
-        instead — still sampled first (see `_chat_sample_rate`), since
-        evaluating the same regex against every row of an unindexed
-        ~7.7M-row table before filtering is the same per-row cost either
-        way; sampling first cut this from ~7s to ~2s in testing.
+        instead — still sampled first (see `_chat_sample_rate`). The sample
+        filter lives in its own `MATERIALIZED` CTE so Postgres can't hoist
+        the regex above the `random()` check and re-evaluate it against
+        every row of the unindexed ~8M-row table: confirmed via `EXPLAIN
+        ANALYZE` against the real event data that a plain combined `WHERE`
+        lets the planner reorder the regex *before* `random()` (it's cheaper
+        by the planner's cost model, not by actual per-row cost), silently
+        undoing the sampling and taking ~8.5s; forcing materialization here
+        measured at ~1.7s for the same real query, a ~5x cut.
         """
         sample_rate = self._chat_sample_rate(start, end, target_rows=250_000)
         hostile_alternatives = "|".join(HOSTILE_WORDS)
         query = sa.text(f"""
+            WITH sampled AS MATERIALIZED (
+                SELECT channel, chatter, message_sent_at, message_text
+                FROM stg.stg_bronze__live_chat
+                WHERE message_sent_at BETWEEN :start AND :end AND random() < :sample_rate
+            )
             SELECT channel, chatter, message_sent_at, message_text
-            FROM stg.stg_bronze__live_chat
-            WHERE message_sent_at BETWEEN :start AND :end AND random() < :sample_rate
-                AND message_text ~* '\\y({hostile_alternatives})'
+            FROM sampled
+            WHERE message_text ~* '\\y({hostile_alternatives})'
             ORDER BY random()
             LIMIT :limit
         """)
@@ -1551,32 +1549,37 @@ class PostgresDataSource:
     def chat_mood_timeseries(self, start: datetime, end: datetime) -> pl.DataFrame:
         """See `DataSource.chat_mood_timeseries`.
 
-        Same hype/sentiment formulas and sampling as
+        Same hype/sentiment formulas as
         `chat_hype_components_timeseries`/`channel_sentiment_leaderboard_timeseries`,
-        just grouped by hour alone (no `channel` in the `GROUP BY`, no top-N
-        filter) — every sampled message across every channel that hour
-        contributes to one event-wide figure.
+        read from the same exact (not sampled) `int.int_chat__hourly_channel_mood`
+        mart, collapsed across channels: each channel-hour's rate is
+        weighted by its own `message_count` before averaging (`SUM(rate *
+        message_count) / SUM(message_count)`), which is exactly the
+        event-wide per-message rate for that hour — not a plain average of
+        per-channel rates, which would let a quiet channel's rate count as
+        much as a busy one's. `HAVING SUM(message_count) >= 20` keeps the
+        same noise floor as before, applied event-wide instead of
+        per-channel.
         """
-        sample_rate = self._chat_sample_rate(start, end, target_rows=250_000)
-        query = sa.text(f"""
+        query = sa.text("""
             SELECT
-                date_trunc('hour', message_sent_at) AS timestamp,
-                {self._HYPE_SCORE_EXPR} AS avg_hype_score,
-                100.0 * (AVG({self._POSITIVE_WORD_CASE}) - AVG({self._HOSTILE_WORD_CASE}))
-                    AS avg_sentiment_score
-            FROM stg.stg_bronze__live_chat
-            WHERE message_sent_at BETWEEN :start AND :end AND random() < :sample_rate
-            GROUP BY date_trunc('hour', message_sent_at)
-            HAVING COUNT(*) >= 20
+                hour_bucket AS timestamp,
+                100.0 * (
+                    0.4 * SUM(punct_rate * message_count)
+                    + 0.3 * SUM(caps_rate * message_count)
+                    + 0.3 * SUM(emote_rate * message_count)
+                ) / SUM(message_count) AS avg_hype_score,
+                100.0 * (
+                    SUM(positive_rate * message_count) - SUM(hostile_rate * message_count)
+                ) / SUM(message_count) AS avg_sentiment_score
+            FROM int.int_chat__hourly_channel_mood
+            WHERE hour_bucket BETWEEN :start AND :end
+            GROUP BY hour_bucket
+            HAVING SUM(message_count) >= 20
             ORDER BY timestamp
         """)
         return self._run(
-            query,
-            {
-                "start": start.replace(tzinfo=PARIS),
-                "end": end.replace(tzinfo=PARIS),
-                "sample_rate": sample_rate,
-            },
+            query, {"start": start.replace(tzinfo=PARIS), "end": end.replace(tzinfo=PARIS)}
         )
 
     def chat_trending_phrases(self, start: datetime, end: datetime, top_n: int) -> pl.DataFrame:
@@ -1997,43 +2000,18 @@ class PostgresDataSource:
     def chatter_day1_retention(self) -> pl.DataFrame:
         """See `DataSource.chatter_day1_retention`.
 
-        Reads `marts.mart_chatters__retention` (grained one row per
-        (chatter, quarter-hour), already deduplicated by the dbt model)
-        rather than scanning raw `stg.stg_bronze__live_chat` — much
-        cheaper, and this mart exists for exactly this purpose.
-
-        "Day" is bucketed relative to the event's own first active
-        quarter-hour, not calendar-date `date_trunc('day', ...)` — the
-        event doesn't start at midnight, so a calendar-day bucket would
-        make "day 0" a few unrepresentative overnight hours instead of a
-        full day, and every later boundary would inherit that same offset.
-        `day_index` 0 is that first 24h window; the cohort is whoever
-        chatted at all during it, and each later `day_index`'s
-        `retained_chatters` is how many of that same cohort chatted again
-        during that later window — a standard day-N retention curve,
-        anchored to the event's own start rather than the wall clock.
+        Reads `marts.mart_chatters__day1_retention_curve` — the cohort/
+        day-index curve computed once at dbt build time from
+        `int.int_chat__chatter_quarter_hourly_activity` — instead of
+        rebuilding the day-0 cohort join over the raw ~2.5M-row
+        `mart_chatters__retention` on every page load. "Day" is bucketed
+        relative to the event's own first active quarter-hour, not
+        calendar-date — see that dbt model for the exact bucketing.
         """
         query = sa.text("""
-            WITH bounds AS (
-                SELECT MIN(quarter_hour_bucket) AS event_start
-                FROM marts.mart_chatters__retention
-            ),
-            daily AS (
-                SELECT DISTINCT
-                    chatter_id,
-                    FLOOR(
-                        EXTRACT(EPOCH FROM (quarter_hour_bucket - bounds.event_start)) / 86400
-                    )::int AS day_index
-                FROM marts.mart_chatters__retention, bounds
-            ),
-            day0_cohort AS (
-                SELECT chatter_id FROM daily WHERE day_index = 0
-            )
-            SELECT d.day_index, COUNT(DISTINCT d.chatter_id) AS retained_chatters
-            FROM daily d
-            JOIN day0_cohort c ON c.chatter_id = d.chatter_id
-            GROUP BY d.day_index
-            ORDER BY d.day_index
+            SELECT day_index, active_chatter_count AS retained_chatters
+            FROM marts.mart_chatters__day1_retention_curve
+            ORDER BY day_index
         """)
         return self._run(query)
 
@@ -2231,32 +2209,35 @@ class PostgresDataSource:
 
         Chat messages are still attributed to a title by matching on
         (channel, hour) — an hour-grain approximation, since a title change
-        mid-hour would split that hour's activity across titles, using
-        `stg.stg_bronze__metadata_snapshots` (Twitch pipeline) for titles
-        (the donations pipeline doesn't carry titles pre-event). Donations,
-        though, come straight from `mart_donations__by_title`, which already
-        attributes each donation to its title at the dbt layer — more
-        accurate than the hour-bucket approximation this used to also apply
-        to donations. A `FULL OUTER JOIN` combines the two since a title can
-        have messages with no donations that hour, or vice versa.
+        mid-hour would split that hour's activity across titles — but now
+        against `int.int_streams__title_segments` (contiguous per-channel
+        title/category runs, ~2.5k rows, computed once at dbt build time)
+        instead of scanning the raw ~5.2M-row `stg_bronze__metadata_snapshots`
+        for distinct (channel, title, hour) tuples. Donations come straight
+        from `mart_donations__by_title`, which already attributes each
+        donation to its title at the dbt layer. A `FULL OUTER JOIN` combines
+        the two since a title can have messages with no donations that hour,
+        or vice versa.
         """
         query = sa.text("""
-            WITH title_hours AS (
-                SELECT DISTINCT
-                    channel, title, category, date_trunc('hour', snapshot_at) AS hour_bucket
-                FROM stg.stg_bronze__metadata_snapshots
-                WHERE title IS NOT NULL AND snapshot_at BETWEEN :start AND :end
+            WITH title_segments AS (
+                SELECT channel, title, category, segment_started_at, segment_ended_at
+                FROM int.int_streams__title_segments
+                WHERE segment_ended_at >= :start AND segment_started_at <= :end
             ),
             title_messages AS (
                 SELECT
-                    th.title,
-                    th.category,
-                    COUNT(DISTINCT th.channel) AS channels,
+                    ts.title,
+                    ts.category,
+                    COUNT(DISTINCT ts.channel) AS channels,
                     COALESCE(SUM(m.message_count), 0) AS message_count
-                FROM title_hours th
+                FROM title_segments ts
                 LEFT JOIN int.int_chat__hourly_channel_activity m
-                    ON m.channel = th.channel AND m.hour_bucket = th.hour_bucket
-                GROUP BY th.title, th.category
+                    ON m.channel = ts.channel
+                    AND m.hour_bucket >= date_trunc('hour', ts.segment_started_at)
+                    AND m.hour_bucket <= date_trunc('hour', ts.segment_ended_at)
+                    AND m.hour_bucket BETWEEN :start AND :end
+                GROUP BY ts.title, ts.category
             ),
             title_donations AS (
                 SELECT title, category, SUM(donation_delta_eur) AS donations_eur
@@ -2282,41 +2263,97 @@ class PostgresDataSource:
     def chatter_breakdown(self, start: datetime, end: datetime) -> pl.DataFrame:
         """See `DataSource.chatter_breakdown`.
 
-        Combines the loyalty-profile mart with the bot-signal mart (real
-        username, account age, message-timing regularity), the account-age
-        mart, and `mart_chatters__breadth_depth_lifespan` (first/last message,
-        lifespan). Usernames fall back to the raw `chatter_id` when a chatter
-        has no `bot_signal` row (mirrors `top_chatters`). Filtered by
-        first/last-message overlap with `[start, end]`, same as
-        `top_chatters` — this is what makes the whole Chatters page
-        filterable, unlike most other per-chatter marts.
+        Reads `marts.mart_chatters__enriched` — the loyalty-profile, bot-
+        signal, account-age, and breadth/depth/lifespan marts already joined
+        once at dbt build time, keyed on `chatter_id` — instead of doing
+        that same 4-way join across ~431k-row tables on every page load.
+        `account_age_bucket` is the one column the mart leaves nullable
+        (unlike `chatter`/`has_long_digit_suffix`, which it already
+        defaults), so the `COALESCE` here mirrors what this query used to do
+        itself. Filtered by first/last-message overlap with `[start, end]`,
+        same as `top_chatters` — this is what makes the whole Chatters page
+        filterable.
         """
         query = sa.text("""
             SELECT
-                p.chatter_id,
-                COALESCE(b.chatter, p.chatter_id) AS chatter,
-                p.distinct_channel_count,
-                p.total_message_count,
-                p.top_channel_share,
-                p.chatter_profile,
-                b.account_created_at,
-                COALESCE(b.has_long_digit_suffix, false) AS has_long_digit_suffix,
-                b.gap_coefficient_of_variation,
-                COALESCE(a.account_age_bucket, 'unknown') AS account_age_bucket,
-                l.first_message_at,
-                l.last_message_at,
-                l.lifespan_hours,
-                l.avg_messages_per_channel
-            FROM marts.mart_chatters__profile p
-            LEFT JOIN marts.mart_chatters__bot_signal b ON b.chatter_id = p.chatter_id
-            LEFT JOIN marts.mart_chatters__account_age_profile a ON a.chatter_id = p.chatter_id
-            JOIN marts.mart_chatters__breadth_depth_lifespan l ON l.chatter_id = p.chatter_id
-            WHERE l.first_message_at <= :end AND l.last_message_at >= :start
-            ORDER BY p.total_message_count DESC
+                chatter_id,
+                chatter,
+                distinct_channel_count,
+                total_message_count,
+                top_channel_share,
+                chatter_profile,
+                account_created_at,
+                has_long_digit_suffix,
+                gap_coefficient_of_variation,
+                COALESCE(account_age_bucket, 'unknown') AS account_age_bucket,
+                first_message_at,
+                last_message_at,
+                lifespan_hours,
+                avg_messages_per_channel
+            FROM marts.mart_chatters__enriched
+            WHERE first_message_at <= :end AND last_message_at >= :start
+            ORDER BY total_message_count DESC
         """)
         return self._run(
             query, {"start": start.replace(tzinfo=PARIS), "end": end.replace(tzinfo=PARIS)}
         )
+
+    def chatter_breakdown_top_n(self, start: datetime, end: datetime, limit: int) -> pl.DataFrame:
+        """See `DataSource.chatter_breakdown_top_n`.
+
+        Same query and columns as `chatter_breakdown`, plus `LIMIT :limit`.
+        The join itself was never the cost (confirmed: `chatter_breakdown`
+        against the pre-joined `mart_chatters__enriched` is still ~5s) —
+        it's transferring and parsing all ~460k rows, most of which are
+        chatters with a handful of messages (75% of the real event's
+        chatters have <=10 messages total). Pushing the `LIMIT` into
+        Postgres means only the rows actually needed leave the database.
+        """
+        query = sa.text("""
+            SELECT
+                chatter_id,
+                chatter,
+                distinct_channel_count,
+                total_message_count,
+                top_channel_share,
+                chatter_profile,
+                account_created_at,
+                has_long_digit_suffix,
+                gap_coefficient_of_variation,
+                COALESCE(account_age_bucket, 'unknown') AS account_age_bucket,
+                first_message_at,
+                last_message_at,
+                lifespan_hours,
+                avg_messages_per_channel
+            FROM marts.mart_chatters__enriched
+            WHERE first_message_at <= :end AND last_message_at >= :start
+            ORDER BY total_message_count DESC
+            LIMIT :limit
+        """)
+        return self._run(
+            query,
+            {"start": start.replace(tzinfo=PARIS), "end": end.replace(tzinfo=PARIS), "limit": limit},
+        )
+
+    def chatter_count(self, start: datetime, end: datetime) -> int:
+        """See `DataSource.chatter_count`.
+
+        The Home page's "Chatters" KPI only ever needs this one number —
+        confirmed directly that `len(chatter_breakdown(...))` (its previous
+        implementation) was transferring and parsing all ~416,000 matching
+        rows, every column, just to count them: ~4.9s for a number nobody
+        looks past. Counts directly against `mart_chatters__enriched` (no
+        join needed now that it's pre-joined) with no `ORDER BY`.
+        """
+        query = sa.text("""
+            SELECT COUNT(*) AS total
+            FROM marts.mart_chatters__enriched
+            WHERE first_message_at <= :end AND last_message_at >= :start
+        """)
+        result = self._run(
+            query, {"start": start.replace(tzinfo=PARIS), "end": end.replace(tzinfo=PARIS)}
+        )
+        return int(result["total"][0])
 
     def chatter_channel_breakdown(self, chatter_id: str) -> pl.DataFrame:
         """See `DataSource.chatter_channel_breakdown`."""
@@ -2397,39 +2434,20 @@ class PostgresDataSource:
     def stream_activity_log(self, channel: str) -> pl.DataFrame:
         """See `DataSource.stream_activity_log`.
 
-        A streamer's title (and sometimes category) changes as they move
-        between activities — this turns the raw metadata-snapshot stream into
-        one row per contiguous (title, category) run: a `LAG` window flags
-        every snapshot where either value changed since the previous
-        snapshot, a running sum of those flags groups consecutive unchanged
-        snapshots into a segment id, and the segment's span is that group's
-        min/max `snapshot_at`.
+        Reads `int.int_streams__title_segments` — the same gaps-and-islands
+        dedup of contiguous (title, category) runs this query used to do
+        itself against the raw ~5.2M-row `stg_bronze__metadata_snapshots`,
+        now computed once at dbt build time (~2.5k rows total, across every
+        channel).
         """
         query = sa.text("""
-            WITH snaps AS (
-                SELECT title, category, snapshot_at,
-                       LAG(title) OVER (ORDER BY snapshot_at) AS prev_title,
-                       LAG(category) OVER (ORDER BY snapshot_at) AS prev_category
-                FROM stg.stg_bronze__metadata_snapshots
-                WHERE channel = :channel AND title IS NOT NULL AND category IS NOT NULL
-            ),
-            flagged AS (
-                SELECT *,
-                    CASE
-                        WHEN prev_title IS DISTINCT FROM title
-                            OR prev_category IS DISTINCT FROM category
-                        THEN 1 ELSE 0
-                    END AS is_new_segment
-                FROM snaps
-            ),
-            grouped AS (
-                SELECT *, SUM(is_new_segment) OVER (ORDER BY snapshot_at) AS segment_id
-                FROM flagged
-            )
-            SELECT title, category, MIN(snapshot_at) AS started_at, MAX(snapshot_at) AS ended_at,
-                   COUNT(*) AS snapshot_count
-            FROM grouped
-            GROUP BY segment_id, title, category
+            SELECT
+                title, category,
+                segment_started_at AS started_at,
+                segment_ended_at AS ended_at,
+                snapshot_count
+            FROM int.int_streams__title_segments
+            WHERE channel = :channel
             ORDER BY started_at
         """)
         return self._run(query, {"channel": channel})
@@ -3389,6 +3407,35 @@ def get_chatter_breakdown(start: datetime, end: datetime) -> pl.DataFrame:
         See `DataSource.chatter_breakdown`.
     """
     return get_data_source().chatter_breakdown(start, end)
+
+
+@st.cache_data(ttl=60, show_spinner="Loading chatter data...")
+def get_chatter_breakdown_top_n(start: datetime, end: datetime, limit: int) -> pl.DataFrame:
+    """Cached, page-facing accessor for the most active chatters, capped to `limit`.
+
+    Args:
+        start: Start of the window to narrow to.
+        end: End of the window to narrow to.
+        limit: Maximum number of (most active) chatters to return.
+
+    Returns:
+        See `DataSource.chatter_breakdown_top_n`.
+    """
+    return get_data_source().chatter_breakdown_top_n(start, end, limit)
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def get_chatter_count(start: datetime, end: datetime) -> int:
+    """Cached, page-facing accessor for how many distinct chatters were active.
+
+    Args:
+        start: Start of the window to narrow to.
+        end: End of the window to narrow to.
+
+    Returns:
+        See `DataSource.chatter_count`.
+    """
+    return get_data_source().chatter_count(start, end)
 
 
 @st.cache_data(ttl=60, show_spinner=False)

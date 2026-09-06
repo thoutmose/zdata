@@ -17,7 +17,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "(`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`) to see live figures."
         ),
         "common.footer": (
-            "ZEvent Dataviz v{version} — an unofficial fan dashboard for the "
+            "ZData v{version} — an unofficial fan dashboard for the "
             "[ZEvent](https://zevent.fr) charity marathon, not affiliated with the event or "
             "its organizers."
         ),
@@ -90,7 +90,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "community.title": "Community",
         "tracker.title": "Donation Tracker",
         # --- home ---
-        "home.title": "ZEvent Dataviz",
+        "home.title": "ZData",
         "home.tagline": "Data-modeling dashboards for the ZEvent charity gaming marathon.",
         "home.db_error": (
             "Database credentials are configured but the connection failed. "
@@ -933,6 +933,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "Streamers page, but for individual chatters."
         ),
         "chatters.no_data": "No chatter data available yet.",
+        "chatters.top_n_default_caption": (
+            "Showing the {limit:,} most active chatters (most of the full "
+            "population has only a handful of messages). Type a name in "
+            "the search box below to search every chatter, event-wide."
+        ),
         "chatters.filters": "Filters",
         "chatters.search": "Search by name",
         "chatters.profile_filter": "Filter by loyalty profile",
@@ -1117,6 +1122,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "leaderboard.chatters_caption": (
             "The most active chatters across the whole event — same figures as the Chatters "
             "page's own ranking, consolidated here."
+        ),
+        "leaderboard.chatters_show_all": (
+            "Load every chatter, not just the {limit:,} most active (slower — also affects "
+            "the CSV export below)"
         ),
         "leaderboard.chart.chatters_podium": "Top 3 by messages sent",
         "leaderboard.explain.chatters": (
@@ -1337,7 +1346,9 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about.infra_heading": "Infrastructure & monitoring",
         "about.infra_body": (
             "The pipeline and its hosting are provisioned as code (infrastructure as "
-            "code), not set up by hand. [Prometheus](https://prometheus.io/) and "
+            "code, see [`zevent-monitoring-infra`](https://github.com/thoutmose/"
+            "zevent-monitoring-infra)), not set up by hand. "
+            "[Prometheus](https://prometheus.io/) and "
             "[Grafana](https://grafana.com/) monitor the pipeline and warehouse "
             "(ingestion lag, job failures, table freshness), and "
             "[ntfy](https://ntfy.sh/) pushes alerts when something needs attention — "
@@ -1370,10 +1381,15 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         ),
         "about.related_heading": "Related projects",
         "about.related_body": (
-            "This app is part of a small ecosystem: `zevent-analysis` (deeper offline "
-            "analysis), `zevent-db` (the warehouse this app reads from), and "
-            "`zevent-infra-monitoring` (pipeline/infra monitoring). This dashboard is "
-            "currently the only one of the four with a working deliverable."
+            "This app is part of a small ecosystem: "
+            "[`zevent-analytics`](https://github.com/thoutmose/zevent-analytics) "
+            "(the real-time data-streaming pipeline — chat, metadata, and donation "
+            "extraction routed through Apache NiFi into PostgreSQL), "
+            "[`zevent-db`](https://github.com/thoutmose/zevent-db) (the dbt warehouse "
+            "this app reads from), and "
+            "[`zevent-monitoring-infra`](https://github.com/thoutmose/"
+            "zevent-monitoring-infra) (infrastructure-as-code, monitoring, and "
+            "alerting for the whole pipeline)."
         ),
         # --- chat intelligence ---
         "chatintel.title": "Chat Intelligence",
@@ -1477,14 +1493,16 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "chatintel.scope.last_12h": "Last 12 hours",
         "chatintel.scope.full": "Full selected range",
         "chatintel.scope_caption": (
-            "Sections below that read raw chat text (hype, sentiment, toxicity, "
-            "mood, trending phrases) analyze {start} → {end}. They default to a "
-            "short recent window, not your full sidebar date range, because "
-            "every one of them scans the *entire* window's raw chat regardless "
-            "of how few results it returns — narrowing this is the one thing "
-            "that actually cuts load time (verified: a 66-hour scan took ~3s, "
-            "a 1-hour one took ~0.4s). Pick \"Full selected range\" to see the "
-            "whole event — it'll be slower to load, by choice, not by accident."
+            "The example flagged messages and trending-phrases sections below "
+            "still read raw chat text and analyze {start} → {end}. They default "
+            "to a short recent window, not your full sidebar date range, "
+            "because they scan the *entire* window's raw chat regardless of "
+            "how few results it returns (verified: a 66-hour scan took ~3s, a "
+            "1-hour one took ~0.4s). Pick \"Full selected range\" to see the "
+            "whole event — it'll be slower to load, by choice, not by "
+            "accident. Hype, sentiment, toxicity and mood above always use "
+            "your full sidebar range — they read a pre-aggregated table, not "
+            "raw chat, so widening them costs nothing."
         ),
         "chatintel.hype_heading": "Chat hype meter",
         "chatintel.hype_weight_punct": "Punctuation weight",
@@ -2059,7 +2077,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "(`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`) pour voir les vrais chiffres."
         ),
         "common.footer": (
-            "ZEvent Dataviz v{version} — un tableau de bord non officiel pour le marathon "
+            "ZData v{version} — un tableau de bord non officiel pour le marathon "
             "caritatif [ZEvent](https://zevent.fr), non affilié à l'événement ni à ses "
             "organisateurs."
         ),
@@ -2134,7 +2152,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "community.title": "Communauté",
         "tracker.title": "Suivi des dons",
         # --- home ---
-        "home.title": "ZEvent Dataviz",
+        "home.title": "ZData",
         "home.tagline": "Tableaux de bord de modélisation de données pour le marathon caritatif ZEvent.",
         "home.db_error": (
             "Les identifiants de la base sont configurés mais la connexion a échoué. "
@@ -3061,6 +3079,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "page Streamers, mais pour les chatteurs individuels."
         ),
         "chatters.no_data": "Aucune donnée de chatteur disponible pour le moment.",
+        "chatters.top_n_default_caption": (
+            "Affichage des {limit:,} chatteurs les plus actifs (la majorité "
+            "de la population totale n'a qu'une poignée de messages). "
+            "Tapez un nom dans la recherche ci-dessous pour chercher parmi "
+            "tous les chatteurs de l'événement."
+        ),
         "chatters.filters": "Filtres",
         "chatters.search": "Rechercher par nom",
         "chatters.profile_filter": "Filtrer par profil de fidélité",
@@ -3255,6 +3279,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "leaderboard.chatters_caption": (
             "Les chatteurs les plus actifs sur l'ensemble de l'événement — mêmes chiffres "
             "que le classement de la page Chatteurs, réunis ici."
+        ),
+        "leaderboard.chatters_show_all": (
+            "Charger tous les chatteurs, pas seulement les {limit:,} plus actifs (plus lent "
+            "— affecte aussi l'export CSV ci-dessous)"
         ),
         "leaderboard.chart.chatters_podium": "Top 3 par messages envoyés",
         "leaderboard.explain.chatters": (
@@ -3511,8 +3539,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about.infra_heading": "Infrastructure & supervision",
         "about.infra_body": (
             "Le pipeline et son hébergement sont provisionnés en code "
-            "(infrastructure as code), pas configurés à la main. "
-            "[Prometheus](https://prometheus.io/) et [Grafana](https://grafana.com/) "
+            "(infrastructure as code, voir [`zevent-monitoring-infra`]"
+            "(https://github.com/thoutmose/zevent-monitoring-infra)), pas configurés "
+            "à la main. [Prometheus](https://prometheus.io/) et "
+            "[Grafana](https://grafana.com/) "
             "supervisent le pipeline et l'entrepôt (retard d'ingestion, échecs de job, "
             "fraîcheur des tables), et [ntfy](https://ntfy.sh/) envoie des alertes quand "
             "quelque chose nécessite attention — ce tableau de bord est un consommateur "
@@ -3550,11 +3580,14 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         ),
         "about.related_heading": "Projets liés",
         "about.related_body": (
-            "Cette application fait partie d'un petit écosystème : `zevent-analysis` "
-            "(analyse hors-ligne plus poussée), `zevent-db` (l'entrepôt que lit cette "
-            "application), et `zevent-infra-monitoring` (supervision pipeline/infra). Ce "
-            "tableau de bord est actuellement le seul des quatre avec un livrable "
-            "fonctionnel."
+            "Cette application fait partie d'un petit écosystème : "
+            "[`zevent-analytics`](https://github.com/thoutmose/zevent-analytics) "
+            "(le pipeline de streaming de données en temps réel — extraction du chat, "
+            "des métadonnées et des dons, acheminée via Apache NiFi vers PostgreSQL), "
+            "[`zevent-db`](https://github.com/thoutmose/zevent-db) (l'entrepôt dbt que "
+            "lit cette application), et [`zevent-monitoring-infra`]"
+            "(https://github.com/thoutmose/zevent-monitoring-infra) "
+            "(infrastructure as code, supervision et alerting pour tout le pipeline)."
         ),
         # --- chat intelligence ---
         "chatintel.title": "Intelligence du chat",
@@ -3663,17 +3696,19 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "chatintel.scope.last_12h": "Dernières 12 heures",
         "chatintel.scope.full": "Plage sélectionnée complète",
         "chatintel.scope_caption": (
-            "Les sections ci-dessous qui lisent le texte brut du chat (hype, "
-            "sentiment, toxicité, ambiance, expressions tendance) analysent "
+            "Les exemples de messages signalés et les expressions tendance "
+            "ci-dessous lisent encore le texte brut du chat et analysent "
             "{start} → {end}. Elles utilisent par défaut une courte fenêtre "
             "récente, pas toute votre plage de dates de la barre latérale, "
-            "car chacune d'elles scanne l'*intégralité* du chat brut de la "
-            "fenêtre, quel que soit le nombre de résultats retournés — "
-            "restreindre cette fenêtre est la seule chose qui réduit "
-            "réellement le temps de chargement (vérifié : un scan de 66 "
-            "heures a pris ~3 s, un scan d'une heure ~0,4 s). Choisissez "
-            "« Plage sélectionnée complète » pour voir tout l'événement — ce "
-            "sera plus lent à charger, par choix, pas par accident."
+            "car elles scannent l'*intégralité* du chat brut de la fenêtre, "
+            "quel que soit le nombre de résultats retournés (vérifié : un "
+            "scan de 66 heures a pris ~3 s, un scan d'une heure ~0,4 s). "
+            "Choisissez « Plage sélectionnée complète » pour voir tout "
+            "l'événement — ce sera plus lent à charger, par choix, pas par "
+            "accident. Hype, sentiment, toxicité et ambiance ci-dessus "
+            "utilisent toujours toute votre plage de la barre latérale — "
+            "elles lisent une table pré-agrégée, pas le chat brut, donc les "
+            "élargir ne coûte rien."
         ),
         "chatintel.hype_heading": "Baromètre de hype du chat",
         "chatintel.hype_weight_punct": "Poids ponctuation",

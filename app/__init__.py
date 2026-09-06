@@ -1,1 +1,1 @@
-"""Zevent Dataviz — Streamlit application package."""
+"""ZData — Streamlit application package."""
