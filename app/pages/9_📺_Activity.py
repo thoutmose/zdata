@@ -15,8 +15,8 @@ from typing import cast
 import plotly.graph_objects as go
 import polars as pl
 import streamlit as st
-from app.components.chrome import chart_explainer, page_header
-from app.components.filters import period_filter
+from app.components.chrome import chart_explainer, page_footer, page_header
+from app.components.filters import apply_global_date_filter, apply_global_streamer_filter
 from app.components.theme import apply_base_layout, node_palette
 from app.core.i18n import t
 from app.core.logging_config import setup_logging
@@ -36,12 +36,17 @@ def _format_duration(td: timedelta | None) -> str:
 
 page_header(t("activity.title"), "📺", t("activity.description"))
 
-streamers = get_streamer_breakdown()
+streamers = apply_global_streamer_filter(get_streamer_breakdown())
 if streamers.is_empty():
     st.warning(t("activity.no_streamers"))
     st.stop()
 
-selected = st.selectbox(t("activity.pick_streamer"), options=streamers["streamer"].to_list())
+streamer_options = streamers["streamer"].to_list()
+if len(streamer_options) == 1:
+    selected = streamer_options[0]
+    st.caption(t("tracker.pick_streamer_single", streamer=selected))
+else:
+    selected = st.selectbox(t("activity.pick_streamer"), options=streamer_options)
 channel = streamers.filter(pl.col("streamer") == selected)["channel"][0]
 
 activity = get_stream_activity_log(channel)
@@ -51,8 +56,7 @@ if activity.is_empty():
 
 activity = activity.with_columns((pl.col("ended_at") - pl.col("started_at")).alias("duration"))
 
-st.subheader(t("activity.filters"))
-activity = period_filter(activity, timestamp_col="started_at", key="activity_period")
+activity = apply_global_date_filter(activity, timestamp_col="started_at")
 if activity.is_empty():
     st.info(t("common.no_data_in_range"))
     st.stop()
@@ -127,5 +131,7 @@ with st.expander(t("common.view_data")):
         file_name="stream_activity.csv",
         mime="text/csv",
     )
+
+page_footer()
 
 logger.info("Activity page rendered (channel=%s, segments=%s)", channel, len(activity))

@@ -10,10 +10,13 @@
 ![PostgreSQL](https://img.shields.io/badge/base%20de%20donn%C3%A9es-PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 
 Tableaux de bord de modélisation de données pour le marathon caritatif de jeu
-vidéo ZEvent — dons, streamers, jeux, et objectifs de dons, chacun sur sa
+vidéo ZEvent — dons, streamers, jeux, chat et communauté, chacun sur sa
 propre page Streamlit, alimentés par une connexion PostgreSQL mutualisée (via
 PgBouncer) avec un jeu de données factices en secours pour le développement
-local.
+local. Un ensemble de filtres présents dans la barre latérale (plage de
+dates, streamers, chatteurs, recherche d'entité, langue EN/FR) s'applique de
+façon cohérente sur toutes les pages — voir
+[Filtres globaux](#filtres-globaux).
 
 ## Sommaire
 
@@ -23,6 +26,7 @@ local.
 - [Démarrage](#démarrage)
 - [Configuration](#configuration)
 - [Pages](#pages)
+- [Filtres globaux](#filtres-globaux)
 - [Développement](#développement)
 - [Sécurité](#sécurité)
 - [Données et méthodologie](#données-et-méthodologie)
@@ -59,35 +63,51 @@ vraie base de données est branchée — les pages ne parlent jamais directement
 ```
 zevent-dataviz/
 ├── app/
-│   ├── 🏠_Home.py                 # Point d'entrée Streamlit (page d'accueil)
-│   ├── pages/                  # Une page par thématique de modélisation
+│   ├── 🏠_Home.py                 # Point d'entrée Streamlit : filtres/recherche/langue rendus ici
+│   ├── pages/                     # Une page par thématique de modélisation (voir Pages ci-dessous)
 │   │   ├── 1_📈_Donations.py
 │   │   ├── 2_🎙️_Streamers.py
 │   │   ├── 3_🎮_Games.py
 │   │   ├── 4_🎯_Donation_Goals.py
 │   │   ├── 5_💬_Live_Chat.py
 │   │   ├── 6_👥_Community.py
-│   │   └── 7_🏆_Donation_Tracker.py
+│   │   ├── 7_🏆_Donation_Tracker.py
+│   │   ├── 8_🗣️_Chatters.py
+│   │   ├── 9_📺_Activity.py
+│   │   ├── 10_ℹ️_About.py
+│   │   ├── 11_🔎_Chat_Messages.py
+│   │   ├── 12_🥇_Leaderboard.py
+│   │   ├── 13_🧠_Chat_Intelligence.py
+│   │   └── 14_🔬_Chat_ML_Lab.py
 │   ├── core/
-│   │   ├── config.py            # Réglages : variables d'env / .env, jamais de secret en dur
-│   │   ├── logging_config.py    # Configuration pilotée par logging.yml, id de session
-│   │   ├── db.py                # Moteur SQLAlchemy mutualisé (st.cache_resource)
-│   │   ├── i18n.py              # Sélecteur de langue EN/FR (t(), language_selector())
-│   │   └── translations.py      # Le catalogue de chaînes EN/FR
+│   │   ├── config.py             # Réglages : variables d'env / .env, jamais de secret en dur
+│   │   ├── logging_config.py     # Configuration pilotée par logging.yml, id de session
+│   │   ├── db.py                 # Moteur SQLAlchemy mutualisé (st.cache_resource)
+│   │   ├── tz.py                 # Utilitaires fuseau Europe/Paris (convention datetime naïf)
+│   │   ├── i18n.py               # Sélecteur de langue EN/FR (t(), language_selector())
+│   │   └── translations.py       # Le catalogue de chaînes EN/FR
 │   ├── data/
 │   │   ├── mock.py               # Données d'exemple déterministes
+│   │   ├── repository.py         # API d'accès aux données (mock vs. Postgres)
 │   │   ├── goal_progress.py      # Calcul partagé début/fin/durée d'un objectif
-│   │   └── repository.py         # API d'accès aux données (mock vs. Postgres)
+│   │   ├── bot_heuristic.py      # Filtre heuristique des chatteurs probablement des bots
+│   │   ├── anonymize.py          # Anonymisation de l'identité des chatteurs
+│   │   ├── emote_cdn.py          # Résolution des URLs d'images d'emotes Twitch
+│   │   ├── external_donations.py # Sources de dons externes (hors Twitch)
+│   │   ├── chat_nlp.py           # Analyse de texte du chat, légère, sans dépendance
+│   │   ├── chat_lexicons.py      # Listes de mots hostiles/positifs/hype (Chat Intelligence)
+│   │   └── chat_ml.py            # ML réel : clustering/anomalies/prévision sklearn + transformers (Chat ML Lab)
 │   └── components/
 │       ├── theme.py              # Palette de graphiques & mise en page Plotly partagée
-│       ├── chrome.py             # En-tête de page & bandeau source de données
+│       ├── chrome.py             # En-tête de page, bandeau source de données, sélecteur de langue
+│       ├── filters.py            # Filtres globaux date/streamer/chatteur (widgets + application)
+│       ├── search.py             # Recherche globale d'entité (saut vers la page correspondante)
 │       └── network_graph.py      # Graphe de réseau à disposition dynamique (networkx + Plotly)
 ├── tests/                        # Suite de tests pytest
 ├── .streamlit/config.toml        # Configuration serveur & thème
 ├── .env.example                  # Variables d'environnement documentées (sans secret)
 ├── logging.yml                   # Profils de logs (development / production)
-├── KARPATHY_GUIDELINES.md        # Philosophie de code de ce dépôt
-└── CLAUDE.md                     # Instructions pour l'assistant IA sur ce dépôt
+└── .claude/skills/karpathy-guidelines/SKILL.md  # Philosophie de code de ce dépôt
 ```
 
 ## Démarrage
@@ -131,13 +151,20 @@ Chaque page a un sélecteur de langue (EN/FR) dans la barre latérale, qui tradu
 
 | Page | Thématique |
 |---|---|
-| 📈 Donations | Dons cumulés, rythme horaire, répartition par phase, mouvements du classement, contrôle qualité |
-| 🎙️ Streamers | Classement par dons/engagement/audience, avec filtres ; un nuage de points de corrélation ; détail du mix de fidélité des chatteurs et du profil horaire d'un streamer |
+| 📈 Donations | Dons cumulés, un podium top-3, rythme horaire, cette année vs. les éditions ZEvent passées, une course animée des dons par chaîne, les moments de pic de dons, répartition par phase, mouvements du classement, contrôle qualité |
+| 🎙️ Streamers | Classement par dons/engagement/audience ; nuage de points de corrélation coloré par efficacité de don ; comparaison de jusqu'à 4 streamers sur un radar en percentiles, le mix de fidélité des chatteurs et le profil horaire ; chatteurs les plus actifs parmi les streamers sélectionnés |
 | 🎮 Games | Catégories jouées, audience simultanée sur la durée de l'événement, sessions de stream récentes, et un classement des titres de stream par messages/dons |
-| 🎯 Donation Goals | Les objectifs de dons fixés par les streamers, par catégorie et par streamer, avec un histogramme des montants à seuil ajustable |
-| 💬 Live Chat | Volume de messages et taux d'engagement dans le temps, une carte de chaleur chaîne×heure, chaînes les plus actives, emotes les plus utilisées |
+| 🎯 Donation Goals | Les objectifs de dons fixés par les streamers, par catégorie et par streamer, un histogramme des montants à seuil ajustable, et un graphique ambition vs réalité (% de couverture des objectifs) |
+| 💬 Live Chat | Volume de messages et taux d'engagement dans le temps, une course animée du nombre de messages par chaîne, les moments de pic de chat, une carte de chaleur chaîne×heure, chaînes les plus actives, emotes les plus utilisées |
 | 👥 Community | Mix de fidélité et d'ancienneté des chatteurs, croissance cumulée des chatteurs, un graphe de réseau à disposition dynamique heure par heure des audiences partagées, chatteurs les plus actifs, paires de chaînes à audience partagée |
 | 🏆 Donation Tracker | Suit le début/la complétion/la durée de chaque objectif de type « donation » — globalement sur tous les streamers, et par streamer, avec une chronologie façon Gantt |
+| 🗣️ Chatters | Page Chatteurs, miroir de Streamers : classement par activité/étendue/fidélité, détail du profil par chaîne d'un chatteur |
+| 📺 Activity | Chronologie titre/catégorie de stream par streamer — quand et à quelle fréquence un streamer a changé ce qu'il jouait |
+| 🔎 Chat Messages | Parcourir et rechercher en plein texte des messages de chat individuels, avec l'identité réelle du chatteur/de la chaîne affichée |
+| 🥇 Leaderboard | Podiums top-3 consolidés et classements complets, regroupant les différents classements par entité de l'application |
+| 🧠 Chat Intelligence | Analyse légère, sans dépendance ML, du chat en direct — listes de mots hostilité/positivité, tendances d'emotes hype, détection de copier-coller, exemples de toxicité avec identité réelle du chatteur/de la chaîne |
+| 🔬 Chat ML Lab | ML réel entraîné sur le chat et les données streamers/chatteurs : clustering de sujets de messages (KMeans + TF-IDF), clustering comportemental streamers/chatteurs avec projection 2D par ACP, détection d'anomalies par Isolation Forest, classification sentiment/toxicité par modèle transformer pré-entraîné comparée à l'heuristique par liste de mots, et un modèle de prévision de dons (Random Forest) qui prédit le total final de chaque streamer à partir d'un instantané en cours d'événement |
+| ℹ️ About | Ce qu'est ZEvent, ce que fait ce tableau de bord et comment fonctionne son pipeline de données |
 
 La vraie base (schémas `raw`/`stg`/`int`/`marts`, modélisés avec dbt) n'a
 aucune dimension « équipe » pour les streamers, qui sont donc classés
@@ -155,6 +182,31 @@ mais sont récupérables via `int.int_chat__chatter_activity.chatter`, joint
 par `chatter_id`. Voir le point d'extension
 `app/data/repository.py::PostgresDataSource`.
 
+## Filtres globaux
+
+Rendus une seule fois, dans la barre latérale (`app/🏠_Home.py`, via
+`app/components/filters.py` et `app/components/search.py`) — Streamlit
+ré-exécute ce point d'entrée avant chaque page, donc un seul rendu à cet
+endroit place les filtres au-dessus des liens de navigation partout :
+
+- **Plage de dates** — un curseur borné par les horodatages propres à
+  l'événement (pas l'heure « maintenant », pour ne pas casser silencieusement
+  avec des données factices ou après la fin de l'événement). Chaque page
+  récupère ses données soit directement avec `(start, end)` issus de cette
+  plage, soit en filtrant un DataFrame déjà récupéré avec
+  `apply_global_date_filter`.
+- **Streamers** / **Chatteurs** — des menus multi-sélection dans la barre
+  latérale qui restreignent les données de chaque page aux entités
+  sélectionnées (`apply_global_streamer_filter` / `apply_global_chatter_filter`) ;
+  laissés vides, chaque page affiche tout le monde.
+- **Recherche** — une boîte dans la barre latérale qui trouve un
+  streamer/chatteur/chaîne par son nom et bascule vers la page qui le
+  couvre, en préremplissant le widget de recherche/filtre local de cette
+  page (`consume_search_query()`).
+- **Langue (EN/FR)** — `language_selector()`, appuyé sur
+  `app/core/translations.py` ; chaque chaîne visible par l'utilisateur, sur
+  chaque page, passe par `t()`.
+
 ## Développement
 
 ```bash
@@ -165,9 +217,9 @@ uv run pytest               # tests
 ```
 
 Les quatre commandes doivent passer avant qu'un changement soit considéré
-comme terminé — voir [`CLAUDE.md`](CLAUDE.md) et
-[`KARPATHY_GUIDELINES.md`](KARPATHY_GUIDELINES.md) pour les standards de code
-de ce dépôt.
+comme terminé — voir
+[`.claude/skills/karpathy-guidelines/SKILL.md`](.claude/skills/karpathy-guidelines/SKILL.md)
+pour les standards de code de ce dépôt.
 
 ## Sécurité
 
@@ -226,7 +278,7 @@ c'est exact, pas un bug. Deux points de vigilance :
 
 ## Philosophie de code
 
-Voir [`KARPATHY_GUIDELINES.md`](KARPATHY_GUIDELINES.md) : lisibilité avant
-ingéniosité, indirection minimale, pas de généralité spéculative. Les
-assistants IA ne sont **jamais** listés comme co-auteurs des commits de ce
-dépôt — voir [`CLAUDE.md`](CLAUDE.md).
+Voir [`.claude/skills/karpathy-guidelines/SKILL.md`](.claude/skills/karpathy-guidelines/SKILL.md) :
+lisibilité avant ingéniosité, indirection minimale, pas de généralité
+spéculative. Les assistants IA ne sont **jamais** listés comme co-auteurs des
+commits de ce dépôt.

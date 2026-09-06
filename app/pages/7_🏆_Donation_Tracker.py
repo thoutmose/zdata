@@ -1,9 +1,14 @@
 """Donation Tracker page: track a streamer's donation-goal milestones over time.
 
-Only `goal_category = "donation"` goals are tracked here — the classic
-cumulative-total milestone ("reach X€ total"). Other goal types (recurring,
-per-single-donation thresholds, ...) don't fit a start/complete timeline —
-see `app/data/repository.py::PostgresDataSource.donation_goal_tracker`.
+Every goal category is tracked, not just `"donation"` (the classic
+cumulative-total milestone, "reach X€ total") — but since each category's
+"start = previous goal's completion" chain only makes sense within that
+category, each one is tracked as its own independent chain against the same
+timeseries rather than mixed into one sequence — see
+`app/data/goal_progress.py::goal_progress_by_category`. The category filter
+below lets you look at one chain at a time, since overlaying every
+category's bars on one timeline would otherwise show unrelated goals'
+time spans crossing each other.
 """
 
 from __future__ import annotations
@@ -14,7 +19,8 @@ from datetime import timedelta
 import plotly.graph_objects as go
 import polars as pl
 import streamlit as st
-from app.components.chrome import chart_explainer, page_header
+from app.components.chrome import chart_explainer, date_filter_caveat, page_footer, page_header
+from app.components.filters import apply_global_streamer_filter
 from app.components.theme import CATEGORICAL, STATUS, apply_base_layout
 from app.core.i18n import t
 from app.core.logging_config import setup_logging
@@ -50,9 +56,12 @@ def _format_duration(td: timedelta | None) -> str:
 
 
 page_header(t("tracker.title"), "🏆", t("tracker.description"))
+date_filter_caveat()
 
 st.subheader(t("tracker.global_heading"))
-global_progress = get_donation_goal_tracker_global()
+global_progress = apply_global_streamer_filter(
+    get_donation_goal_tracker_global(), channel_col="twitch_login"
+)
 if global_progress.is_empty():
     st.info(t("tracker.no_global_data"))
 else:
@@ -93,15 +102,51 @@ else:
         chart_explainer(t("tracker.explain.top_completers"))
 
 st.subheader(t("tracker.per_streamer_heading"))
-streamers = get_streamer_breakdown()
+streamers = apply_global_streamer_filter(get_streamer_breakdown())
 if streamers.is_empty():
     st.warning(t("tracker.no_streamers"))
     st.stop()
 
-selected = st.selectbox(t("tracker.pick_streamer"), options=streamers["streamer"].to_list())
+streamer_options = streamers["streamer"].to_list()
+if len(streamer_options) == 1:
+    # The global streamer filter already narrowed this to exactly one —
+    # nothing left to pick, so skip the selectbox and go straight to it.
+    selected = streamer_options[0]
+    st.caption(t("tracker.pick_streamer_single", streamer=selected))
+else:
+    selected = st.selectbox(t("tracker.pick_streamer"), options=streamer_options)
 channel = streamers.filter(pl.col("streamer") == selected)["channel"][0]
 
 progress = get_donation_goal_tracker(channel)
+if progress.is_empty():
+    st.info(t("tracker.no_goals"))
+    st.stop()
+
+available_categories = sorted(progress["goal_category"].unique().to_list())
+# A `key`'d widget with no upfront session-state check crashes when a
+# streamer switch changes `options` out from under a value Streamlit is
+# still holding from the *previous* streamer (a category that streamer
+# doesn't have) — reproducible via `st.testing.v1.AppTest` by stepping
+# through streamers, and the same widget-identity issue applies to a real
+# session. Resetting the stored value to "every current category" whenever
+# it no longer fits (not just on every switch) preserves a still-valid
+# selection across streamers that happen to share categories.
+_category_filter_key = "tracker_category_filter"
+if _category_filter_key not in st.session_state or not set(
+    st.session_state[_category_filter_key]
+).issubset(available_categories):
+    st.session_state[_category_filter_key] = available_categories
+category_filter = st.multiselect(
+    t("tracker.category_filter"),
+    options=available_categories,
+    help=t("tracker.category_filter_help"),
+    key=_category_filter_key,
+)
+progress = (
+    progress.filter(pl.col("goal_category").is_in(category_filter))
+    if category_filter
+    else progress
+)
 if progress.is_empty():
     st.info(t("tracker.no_goals"))
     st.stop()
@@ -203,6 +248,7 @@ table = ordered.with_columns(
     .alias("goal_amount_eur"),
 )
 display_columns = {
+    "goal_category": t("tracker.column.category"),
     "goal_name": t("tracker.column.goal"),
     "goal_amount_eur": t("tracker.column.amount"),
     "status_label": t("tracker.column.status"),
@@ -228,5 +274,7 @@ st.download_button(
     file_name="donation_tracker.csv",
     mime="text/csv",
 )
+
+page_footer()
 
 logger.info("Donation Tracker page rendered (channel=%s, goals=%s)", channel, len(progress))

@@ -15,6 +15,7 @@ from app.core.i18n import t
 from app.data.repository import (
     get_category_breakdown,
     get_chatter_breakdown,
+    get_event_bounds,
     get_streamer_breakdown,
     get_title_leaderboard,
     get_top_emotes,
@@ -34,10 +35,17 @@ class SearchResult:
 def _build_index() -> list[SearchResult]:
     """Assemble the searchable index from every page's already-cached data.
 
+    Always indexes the *full* event span, regardless of the sidebar date
+    filter — search is for jumping to a page, not itself a filtered view.
+
     Returns:
         A flat list of `SearchResult`, one per streamer/category/title/emote/chatter.
     """
     results: list[SearchResult] = []
+    bounds = get_event_bounds()
+    if bounds is None:
+        return results
+    start, end = bounds
 
     streamers = get_streamer_breakdown()
     if not streamers.is_empty():
@@ -46,28 +54,28 @@ def _build_index() -> list[SearchResult]:
             for name in streamers["streamer"].drop_nulls().unique()
         ]
 
-    categories = get_category_breakdown()
+    categories = get_category_breakdown(start, end)
     if not categories.is_empty():
         results += [
             SearchResult(cat, t("search.type.category"), "pages/3_🎮_Games.py", "🎮")
             for cat in categories["category"].drop_nulls().unique()
         ]
 
-    titles = get_title_leaderboard()
+    titles = get_title_leaderboard(start, end)
     if not titles.is_empty():
         results += [
             SearchResult(title, t("search.type.title"), "pages/3_🎮_Games.py", "🎮")
             for title in titles["title"].drop_nulls().unique()
         ]
 
-    emotes = get_top_emotes()
+    emotes = get_top_emotes(start, end)
     if not emotes.is_empty():
         results += [
             SearchResult(emote, t("search.type.emote"), "pages/5_💬_Live_Chat.py", "💬")
             for emote in emotes["emote"].drop_nulls().unique()
         ]
 
-    chatters = get_chatter_breakdown()
+    chatters = get_chatter_breakdown(start, end)
     if not chatters.is_empty() and "chatter" in chatters.columns:
         results += [
             SearchResult(name, t("search.type.chatter"), "pages/8_🗣️_Chatters.py", "🗣️")

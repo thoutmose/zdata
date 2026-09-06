@@ -16,15 +16,30 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "Showing **sample data** — connect a database "
             "(`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`) to see live figures."
         ),
+        "common.footer": (
+            "ZEvent Dataviz v{version} — an unofficial fan dashboard for the "
+            "[ZEvent](https://zevent.fr) charity marathon, not affiliated with the event or "
+            "its organizers."
+        ),
         "common.no_data_in_range": "No data in the selected range.",
         "common.view_data": "View underlying data",
         "common.download_csv": "⬇️ Download CSV",
+        "common.prev_page": "⬅️ Previous",
+        "common.next_page": "Next ➡️",
+        "common.page_of": "Page {page} of {pages}",
+        "common.pie_other": "Other",
         "common.how_to_read": "💡 How to read this chart",
-        "period.label": "Period",
-        "period.last_hour": "Last hour",
-        "period.last_6h": "Last 6h",
-        "period.last_24h": "Last 24h",
-        "period.all": "All event",
+        "common.date_filter_caveat": (
+            "This section reflects the whole event, not the sidebar date filter — "
+            "it's pre-aggregated with no per-row timestamp to filter by."
+        ),
+        "common.entity_filter_caveat": (
+            "This section isn't narrowed by the sidebar's streamer/chatter filters either — "
+            "it's pre-aggregated with no per-row channel/chatter to filter by."
+        ),
+        "filter.date_range_label": "📅 Date range",
+        "filter.streamer_label": "🎙️ Streamers",
+        "filter.chatter_label": "🗣️ Chatters",
         "common.per_hour": "{unit} / hour",
         "common.unit.messages": "messages",
         "common.unit.viewers": "viewers",
@@ -55,6 +70,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "search.type.title": "Stream title",
         "search.type.emote": "Emote",
         "search.type.chatter": "Chatter",
+        # --- nav ---
+        "nav.info_section": "Info",
         # --- page titles (used in both the sidebar page header and the home cards) ---
         "donations.title": "Donations",
         "streamers.title": "Streamers",
@@ -73,40 +90,65 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "home.about_body": (
             "This app streams and analyzes the live data of the latest ZEvent occurrence "
             "(**September 3-6, 2026**) — a French charity gaming marathon where streamers "
-            "raise donations for a cause. It covers four data domains straight from the "
-            "warehouse as the event happens: **donations**, **streamers**, **live chat**, "
-            "and **chatters**.\n\n"
-            "It's read-only and connects to a shared PostgreSQL warehouse (via PgBouncer) "
-            "modeled with dbt across `raw` → `stg` → `int` → `marts` schemas, fed by two "
-            "independent pipelines: ZEvent's own donations/goals site, and Twitch's "
-            "stream/chat metadata."
+            "raise donations for a cause. It's read-only, updated straight from the "
+            "warehouse as the event happens."
         ),
+        "home.about_link": "How this dashboard works, and where its data comes from",
         "home.kpi_heading": "Event snapshot",
+        "home.kpi.total_raised": "Total raised",
         "home.kpi.duration": "Donation tracking span",
         "home.kpi.duration_value": "{hours} h",
         "home.kpi.streamers": "Streamers",
         "home.kpi.chatters": "Chatters",
         "home.kpi.messages": "Chat messages",
         "home.kpi.peak_viewers": "Peak concurrent viewers",
-        "home.pages_heading": "Pages",
-        "home.related_projects": (
-            "**Related projects** — this app is part of a small ecosystem: "
-            "`zevent-analysis` (deeper offline analysis), `zevent-db` (the warehouse this "
-            "app reads from), and `zevent-infra-monitoring` (pipeline/infra monitoring). "
-            "This dashboard is currently the only one of the four with a working deliverable."
+        "home.daily_heading": "Daily trend",
+        "home.daily_caption": "Event-wide totals bucketed by day.",
+        "home.chart.daily": "Donations per day",
+        "home.explain.daily": (
+            "One bar per calendar day of the event — a coarser view than the hourly "
+            "charts on other pages, useful for spotting which day raised the most."
         ),
+        "home.pages_heading": "Pages",
         # --- donations ---
         "donations.description": (
             "Cumulative donations over the course of the event, how the pace evolves hour "
             "by hour, and who's moving on the leaderboard."
         ),
         "donations.no_data": "No donation data available yet.",
-        "donations.filters": "Filters",
         "donations.kpi.total_raised": "Total raised",
         "donations.kpi.active_streamers": "Active streamers (last hour)",
         "donations.kpi.best_hour": "Best hour",
+        "donations.podium_heading": "Top fundraisers",
+        "donations.podium_caption": "The 3 streamers who've raised the most so far.",
+        "donations.chart.podium": "Top 3 by donations raised",
+        "donations.explain.podium": (
+            "Total donations raised per streamer, event-wide (not affected by the sidebar "
+            "date filter) — bar height is the real amount, ranked 1st/2nd/3rd."
+        ),
         "donations.chart.cumulative": "Cumulative donations",
         "donations.chart.pace": "Donation pace (per hour)",
+        "donations.donation_race_heading": "Donation leaderboard, hour by hour",
+        "donations.no_donation_race": "No per-channel donation ranking available yet.",
+        "donations.donation_race_top_n": "Show top N streamers",
+        "donations.donation_race_caption": (
+            "The top streamers overall by cumulative donations, hour by hour — each "
+            "streamer's full history in the window, not just the hours they led."
+        ),
+        "donations.chart.donation_race": "Top streamers by donations, over time",
+        "donations.explain.donation_race": (
+            "One line per streamer among the top N overall by cumulative donations; "
+            "hover a point for its exact rank that hour among every streamer. Unlike "
+            "the event-wide cumulative total above, this shows which specific "
+            "streamers were leading, and how that changed."
+        ),
+        "donations.spikes_heading": "Notable spikes",
+        "donations.no_spikes": "No standout donation moments in this range yet.",
+        "donations.spikes_caption": "The single biggest donation moments, with what was on screen at the time.",
+        "donations.explain.spikes": (
+            "Each row is one unusually large donation — its title/category and how "
+            "busy chat was that hour, for context on what might have driven it."
+        ),
         "donations.phases_heading": "Event phases",
         "donations.chart.by_phase": "Donations by event phase",
         "donations.phases_caption": (
@@ -126,6 +168,29 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "donations.explain.cumulative": (
             "The running total of donations across every streamer, from the start of the "
             "event to now. Always flat or rising — it never goes down."
+        ),
+        "donations.editions_heading": "This year vs. previous editions",
+        "donations.editions_caption": (
+            "Cumulative donations aligned by hours since each edition started, not by "
+            "calendar date, so the shapes compare directly. This event's own curve comes "
+            "from this app's data; past editions' curves are read from "
+            "[EvenMoreStats](https://zevent.gdoc.fr) (evenmorestats.fr), an unofficial "
+            "third-party ZEvent tracker — not this app's own warehouse."
+        ),
+        "donations.editions_unavailable": (
+            "Previous-edition comparison is temporarily unavailable — couldn't reach the "
+            "external data source (EvenMoreStats)."
+        ),
+        "donations.chart.editions": "Cumulative donations by hours since start",
+        "donations.hours_since_start": "hours since event start",
+        "donations.editions_y_axis": "€ (log scale)",
+        "donations.explain.editions": (
+            "Solid green is this event; gray lines (one dash style per year) are past "
+            "editions, each starting its own clock at hour 0 — a steeper early climb or an "
+            "earlier finish-line crossing shows up directly as one curve pulling ahead of "
+            "another. The y-axis is logarithmic (each gridline is 10x the last) so a past "
+            "edition with a much higher final total doesn't flatten every other curve, "
+            "including this year's own, into the bottom of the chart."
         ),
         "donations.explain.pace": (
             "How much was raised in each individual hour (not cumulative). Spikes usually "
@@ -161,6 +226,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "streamers.rank.donations": "Donations",
         "streamers.rank.engagement": "Chat engagement (messages)",
         "streamers.rank.audience": "Audience (avg. viewers)",
+        "streamers.rank.efficiency": "€ per viewer",
         "streamers.top_n": "Show top N",
         "streamers.kpi.top": "Top by {metric}",
         "streamers.kpi.total_raised": "Total raised (shown)",
@@ -168,19 +234,54 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "streamers.chart.ranked": "Streamers by {metric}",
         "streamers.correlation_heading": "Audience vs. engagement",
         "streamers.correlation_caption": (
-            "Each point is a streamer — bubble size is donations raised. Useful for spotting "
-            "high-viewer/low-chat (or the reverse) outliers."
+            "Each point is a streamer — bubble size is donations raised, color is donation "
+            "efficiency (€ per viewer). Useful for spotting high-viewer/low-chat (or the "
+            "reverse) outliers, and streamers whose audience converts to donations "
+            "unusually well or poorly for their size."
         ),
         "streamers.chart.correlation": "Avg. viewers vs. chat messages",
+        "streamers.correlation_stat": (
+            "Pearson r = {r} between avg. viewers and chat messages, across the streamers shown "
+            "(1 = perfectly linear together, 0 = no linear relationship, negative = one rises as "
+            "the other falls). This measures *linear* association only, and association isn't "
+            "causation — a third factor (e.g. time slot) can drive both."
+        ),
+        "streamers.correlation_stat_na": (
+            "Not enough streamers shown (or no variation in one axis) to compute a correlation."
+        ),
+        "streamers.efficiency_axis": "€ / viewer",
         "streamers.profile_heading": "Streamer profile",
-        "streamers.pick_streamer": "Pick a streamer for a detailed profile",
+        "streamers.pick_streamer": "Pick streamers to compare (up to 4)",
+        "streamers.pick_at_least_one": "Pick at least one streamer above to see their profile.",
         "streamers.kpi.peak_viewers": "Peak viewers",
         "streamers.kpi.uptime": "Uptime",
         "streamers.kpi.top_category": "Top category",
         "streamers.kpi.unique_chatters": "Unique chatters",
         "streamers.uptime_quirk": "100%+ (data quirk)",
+        "streamers.column.streamer": "Streamer",
+        "streamers.radar_caption": (
+            "This streamer's percentile rank against every streamer in the event, across "
+            "five metrics at once — the dashed line marks the 50th percentile (the median "
+            "streamer) as a baseline to compare the shape against."
+        ),
+        "streamers.chart.radar": "{streamer}'s profile vs. the field",
+        "streamers.chart.radar_compare": "Selected streamers' profile vs. the field",
+        "streamers.radar.donations": "Donations",
+        "streamers.radar.audience": "Audience",
+        "streamers.radar.engagement": "Engagement",
+        "streamers.radar.efficiency": "€/viewer",
+        "streamers.radar.uptime": "Uptime",
+        "streamers.radar.median": "Median streamer",
+        "streamers.explain.radar": (
+            "Each axis is a percentile rank (0-100) against every streamer, not a raw "
+            "value — donations and viewer counts aren't on the same scale, so raw numbers "
+            "on one radar would be meaningless; percentile puts them on one comparable "
+            "footing. A shape that bulges outward past the dashed median line is where "
+            "this streamer leads the field; a dent inward is where they trail it."
+        ),
         "streamers.chart.loyalty_mix": "{streamer}'s chatter loyalty mix",
-        "streamers.no_diurnal_data": "No hourly viewer pattern available yet for this streamer.",
+        "streamers.chart.loyalty_mix_compare": "Chatter loyalty mix — selected streamers",
+        "streamers.no_diurnal_data": "No hourly viewer pattern available yet for the selected streamer(s).",
         "streamers.chart.diurnal": "Hourly viewer pattern vs. event average",
         "streamers.hour_of_day": "hour of day (Europe/Paris)",
         "streamers.event_average": "Event average",
@@ -190,35 +291,106 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         ),
         "streamers.explain.correlation": (
             "Each point is a streamer: horizontal position is average viewers, vertical "
-            "position is chat messages, and bubble size is donations raised. A point far "
-            "from the rest is worth a closer look — e.g. lots of viewers but a quiet chat."
+            "position is chat messages, bubble size is donations raised, and color is "
+            "donations per viewer (gold = more efficient). A point far from the rest is "
+            "worth a closer look — e.g. lots of viewers but a quiet chat, or a small bubble "
+            "with a bright color (little raised overall, but efficient per viewer)."
         ),
         "streamers.explain.loyalty_mix": (
             "How many of this streamer's chatters only chat here (loyal) vs. also chat on "
             "other channels during the event (multi-streamer, semi-nomad, nomad)."
         ),
+        "streamers.top_chatters_heading": "Top chatters",
+        "streamers.top_chatters_caption_all": (
+            "The most active chatters across all {n} streamers — event-wide, like the rest "
+            "of this page, not affected by the sidebar date filter."
+        ),
+        "streamers.top_chatters_caption_filtered": (
+            "The most active chatters across the {n} streamers matching the filters above — "
+            "event-wide, like the rest of this page, not affected by the sidebar date filter."
+        ),
+        "streamers.chart.top_chatters": "Top {n} chatters",
+        "streamers.explain.top_chatters": (
+            "Each chatter's messages summed across only the streamers in scope above (not "
+            "their whole-event total) — hover a bar to see how many of those streamers' "
+            "channels they actually posted in, since a high total spread across several "
+            "channels reads differently than the same total from one channel alone."
+        ),
         "streamers.explain.diurnal": (
-            "Average viewers by hour of day for this streamer (solid line) vs. the "
-            "event-wide average (dotted) — shows whether this streamer's peak hours line "
-            "up with, or differ from, everyone else's."
+            "Average viewers by hour of day for each selected streamer (solid line) vs. the "
+            "event-wide average (dotted) — shows whether their peak hours line up with, or "
+            "differ from, everyone else's."
+        ),
+        "streamers.night_shift_caption": (
+            "Donation euros raised per viewer, by hour of day — muted bars mark overnight hours."
+        ),
+        "streamers.night_shift_compare_note": (
+            "Only shown for a single streamer — the overnight highlighting doesn't read "
+            "cleanly once several streamers' bars are mixed together. Narrow your pick above "
+            "to one streamer to see it."
+        ),
+        "streamers.chart.night_shift": "Donation efficiency by hour of day — {streamer}",
+        "streamers.night_shift_axis": "€ per viewer",
+        "streamers.explain.night_shift": (
+            "Some streamers raise disproportionately more per viewer during overnight "
+            "hours — a small, loyal audience giving generously — even though total "
+            "viewership is lower then."
         ),
         # --- games ---
         "games.description": (
-            "Which categories are being played, concurrent viewership over time, and recent sessions."
+            "Twitch channel metadata: which categories were played and when, the hour-by-"
+            "hour viewer leaderboard across channels, category switches' viewer impact, "
+            "and recent stream sessions."
         ),
-        "games.filters": "Filters",
         "games.kpi.concurrent_now": "Concurrent viewers now",
         "games.kpi.channels_now": "Live channels now",
         "games.kpi.peak_concurrent": "Peak concurrent viewers",
         "games.chart.viewership": "Event-wide concurrent viewership",
         "games.chart.live_channels": "Live channels over time",
         "games.no_viewership": "No viewership data available yet.",
+        "games.viewer_race_heading": "Viewer leaderboard, hour by hour",
+        "games.no_viewer_race": "No per-channel viewership ranking available yet.",
+        "games.viewer_race_top_n": "Show top N channels",
+        "games.viewer_race_caption": (
+            "The top channels overall by average viewers, hour by hour — each channel's "
+            "full history in the window, not just the hours it led."
+        ),
+        "games.chart.viewer_race": "Top channels by viewers, over time",
+        "games.explain.viewer_race": (
+            "One line per channel among the top N overall by average viewers; hover a "
+            "point for its exact rank that hour among every channel. Unlike the "
+            "event-wide viewership total above, this shows which specific channels were "
+            "leading, and how that changed."
+        ),
         "games.categories_heading": "Categories",
         "games.category_filter": "Filter categories",
         "games.chart.by_category": "Channel-hours by category",
         "games.no_categories": "No category data available yet.",
+        "games.category_trend_heading": "Category popularity over time",
+        "games.no_category_trend": "No hour-by-hour category data available yet.",
+        "games.category_trend_caption": (
+            "How many channels were playing each category, hour by hour — the top 7 "
+            "categories by total channel-hours, plus \"Other\" for the rest."
+        ),
+        "games.chart.category_trend": "Channels playing each category, over time",
+        "games.explain.category_trend": (
+            "A stacked area per category: height is how many channels were playing it "
+            "that hour. Good for spotting a category trending at a specific moment (e.g. "
+            "everyone switching to the same game for a challenge) that the totals bar "
+            "above it can't show."
+        ),
         "games.sessions_heading": "Recent stream sessions",
         "games.no_sessions": "No stream sessions recorded yet.",
+        "games.sessions_caption": (
+            "Peak viewers per session, colored by whether viewership grew (green) or fell "
+            "(red) from the session's start — the full table is in the expander below."
+        ),
+        "games.chart.sessions": "Peak viewers by session",
+        "games.explain.sessions": (
+            "One bar per recent stream session — height is peak viewers reached during "
+            "it, color is whether viewership was higher or lower than when the session "
+            "started."
+        ),
         "games.titles_heading": "Stream title leaderboard",
         "games.no_titles": "No stream-title data available yet.",
         "games.titles_caption": (
@@ -240,6 +412,18 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "games.explain.by_category": (
             "Total channel-hours spent playing each category — a category played by many "
             "channels for a short time can outrank one played by few for a long time."
+        ),
+        "games.switches_heading": "Category switches",
+        "games.no_switches": "No category switches in this range yet.",
+        "games.switches_caption": "Switches ranked by how much the viewer count moved afterward.",
+        "games.chart.switches": "Biggest viewer swings after a category switch",
+        "games.switches_axis": "Viewer change (next hour)",
+        "games.explain.switches": (
+            "Green means viewers grew in the hour after switching category, red means "
+            "they dropped — ranked by the size of the swing either way. This is what happened "
+            "*after* the switch, not proof the switch *caused* it — a natural day/night dip, "
+            "the streamer simply going live around then, or another channel's own swing can "
+            "move the number just as easily."
         ),
         "games.explain.titles": (
             "Stream titles ranked by chat messages or donations (pick which above) — an "
@@ -285,14 +469,39 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "Every 'donation'-type goal's raw amount, log-scaled so both realistic and "
             "joke-sized goals fit on one axis. The dashed line marks your cutoff slider."
         ),
+        "goals.ambition_heading": "Ambition vs. reality",
+        "goals.no_ambition": "No goal-coverage data available yet.",
+        "goals.ambition_caption": (
+            "The streamers whose donation goals were, so far, the most out of reach — "
+            "fitting, given how exaggerated goal amounts often are."
+        ),
+        "goals.chart.ambition": "Least-covered donation goals",
+        "goals.ambition_axis": "% of goal total raised",
+        "goals.explain.ambition": (
+            "Total raised as a percentage of the streamer's combined goal amounts — a "
+            "low number here is as likely to mean 'joke goal' as 'ambitious goal'."
+        ),
         # --- chat ---
         "chat.description": "Message volume over time, the busiest channels, and the most-used emotes.",
         "chat.no_data": "No chat data available yet.",
-        "chat.filters": "Filters",
         "chat.kpi.messages_this_hour": "Messages this hour",
         "chat.kpi.chatters_this_hour": "Unique chatters this hour",
         "chat.kpi.total_messages": "Total messages (event)",
         "chat.chart.activity": "Chat messages per hour (all channels)",
+        "chat.message_race_heading": "Message leaderboard, hour by hour",
+        "chat.no_message_race": "No per-channel message ranking available yet.",
+        "chat.message_race_top_n": "Show top N channels",
+        "chat.message_race_caption": (
+            "The top channels overall by chat messages, hour by hour — each channel's "
+            "full history in the window, not just the hours it led."
+        ),
+        "chat.chart.message_race": "Top channels by messages, over time",
+        "chat.explain.message_race": (
+            "One line per channel among the top N overall by message count; hover a "
+            "point for its exact rank that hour among every channel. Unlike the "
+            "event-wide message volume above, this shows which specific channels were "
+            "busiest, and how that changed."
+        ),
         "chat.engagement_heading": "Chat engagement rate",
         "chat.engagement_caption": (
             "Messages per minute per 100 viewers — a proxy for enthusiasm/engagement that "
@@ -305,7 +514,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "chat.heatmap_heading": "Activity heatmap",
         "chat.no_heatmap": "No channel-level chat data available yet.",
         "chat.channel_filter": "Filter channels",
-        "chat.heatmap_caption": "Darker = more messages in that channel, that hour.",
+        "chat.heatmap_caption": (
+            "Brighter/more vivid green = more messages in that channel, that hour; a blank "
+            "cell means the channel simply wasn't active that hour."
+        ),
         "chat.chart.heatmap": "Messages by channel and hour",
         "chat.channels_heading": "Busiest channels",
         "chat.no_channels": "No channel-level chat data available yet.",
@@ -331,18 +543,94 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "a big channel's raw message count."
         ),
         "chat.explain.heatmap": (
-            "One cell per channel x hour; darker means more messages. Good for spotting "
+            "One cell per channel x hour; brighter means more messages, and an empty cell "
+            "means that channel had no recorded activity that hour. Good for spotting "
             "which channels were active at which times, at a glance."
+        ),
+        "chat.spikes_heading": "Chat spikes",
+        "chat.no_spikes": "No standout chat moments in this range yet.",
+        "chat.spikes_caption": (
+            "Hours where a channel's message volume deviated most from its own average."
+        ),
+        "chat.chart.spikes": "Biggest message-volume anomalies",
+        "chat.spikes_axis": "Standard deviations from the channel's own average",
+        "chat.explain.spikes": (
+            "Each bar is one channel-hour, scored against that channel's own average and "
+            "spread — so a normally-quiet channel's ordinary hour won't outrank a "
+            "genuinely unusual moment for a busier one. Red/orange mark the most extreme."
         ),
         "chat.explain.composition": (
             "Each channel's messages split by who sent them (subscriber, VIP, moderator, "
             "plain viewer) — a high subscriber/moderator share suggests an established "
             "community, not just raw volume."
         ),
+        "chat.verbosity_heading": "Message length by channel",
+        "chat.verbosity_caption": (
+            "How long a typical message is in each channel, in characters — a chat can be "
+            "high-volume and still low-effort (short spam/emote-only messages), or lower-"
+            "volume but more substantive."
+        ),
+        "chat.chart.verbosity": "Average message length by channel",
+        "chat.verbosity_axis": "characters / message",
+        "chat.explain.verbosity": (
+            "Average character count per message in that channel, event-wide — a rough "
+            "proxy for chat depth, not sentiment or quality."
+        ),
         "chat.explain.emotes": (
             "The most-used emotes across the event, by usage count. Emotes not yet in the "
             "catalog are shown by a shortened id instead of their real code (see the note "
             "above the chart, if any are unnamed)."
+        ),
+        "chat.emote_search_heading": "Search by emote",
+        "chat.emote_search_caption": "Find every chat message using a specific emote — who sent it, and where.",
+        "chat.emote_search_label": 'Emote code (e.g. "Kappa", "LUL")',
+        "chat.emote_search_no_matches": "No emotes match that search.",
+        "chat.emote_search_pick": "Which one?",
+        "chat.emote_search_no_usage": "That emote wasn't used in the selected date range.",
+        "chat.emote_search_results_caption": "{count} messages, most recent first (capped at 200).",
+        "chat.breakdown_heading": "Message breakdown",
+        "chat.breakdown_caption": (
+            "Slice the event's messages by channel, chatter, time of day, or emote."
+        ),
+        "chat.breakdown_dimension": "Break down by",
+        "chat.breakdown.by_channel": "Channel",
+        "chat.breakdown.by_chatter": "Chatter",
+        "chat.breakdown.by_time": "Time of day",
+        "chat.breakdown.by_emote": "Emote",
+        "chat.chart.breakdown_channel": "Messages by channel",
+        "chat.chart.breakdown_chatter": "Messages by chatter",
+        "chat.chart.breakdown_time": "Messages by time of day",
+        "chat.chart.breakdown_emote": "Messages by emote",
+        "chat.explain.breakdown": (
+            "The top 7 slices by message count, plus a single \"Other\" slice for the "
+            "long tail — a pie with more categories than that stops being readable. "
+            '"Time of day" buckets every message into a 6-hour window in Europe/Paris '
+            "wall-clock time, regardless of which day of the event it fell on."
+        ),
+        "chat.daypart.morning": "Morning (6am-12pm)",
+        "chat.daypart.afternoon": "Afternoon (12pm-6pm)",
+        "chat.daypart.evening": "Evening (6pm-12am)",
+        "chat.daypart.night": "Night (12am-6am)",
+        "chat.drilldown_heading": "Chatter ↔ channel drill-down",
+        "chat.drilldown_caption": (
+            "Pick one chatter to see their messages split across channels, or pick one "
+            "channel to see its messages split across chatters — the same relationship, "
+            "read in each direction."
+        ),
+        "chat.drilldown_chatter_heading": "One chatter, by channel",
+        "chat.drilldown_pick_chatter": "Pick a chatter",
+        "chat.drilldown_channel_heading": "One channel, by chatter (inverse)",
+        "chat.drilldown_pick_channel": "Pick a channel",
+        "chat.chart.drilldown_chatter": "{chatter}'s messages by channel",
+        "chat.chart.drilldown_channel": "{channel}'s messages by chatter",
+        "chat.explain.drilldown": (
+            "Left: one chatter's messages, split across every channel they chatted in. "
+            "Right: the inverse — one channel's top chatters. The channel side is "
+            "approximate: the chatter leaderboard tracks one (primary) channel per "
+            "chatter, not their full per-channel activity, so a chatter who mostly "
+            "chats elsewhere but occasionally drops into this channel may not appear. "
+            "Only channels with at least one leaderboard chatter are offered, so the "
+            "picker never lands on a guaranteed-empty choice."
         ),
         # --- community ---
         "community.description": (
@@ -360,7 +648,11 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "community.hourly_network_heading": "Chatter community, hour by hour",
         "community.hourly_network_caption": (
             "Each edge means two channels share chatters that hour — thicker/darker means "
-            "more shared chatters. Pick an hour to see how the community network evolved."
+            "more shared chatters, and node color is a detected community (channels whose "
+            "audiences overlap most tend to cluster together, not an arbitrary per-channel "
+            "color). Pick an hour to see how the community structure evolved; it opens on "
+            "the latest hour with computed data, since the very newest hour of a live "
+            "event can briefly lag behind."
         ),
         "community.hour_picker": "Hour",
         "community.no_hourly_network": "No hourly network data available yet.",
@@ -387,18 +679,69 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "community.no_network": "No cross-channel audience overlap detected yet.",
         "community.network_caption": (
             "Every channel pair that shares chatters, as a network graph — thicker/darker "
-            "edges mean more shared chatters, and each channel keeps its own fixed node "
-            "color, same as the hour-by-hour graph above."
+            "edges mean more shared chatters, and node color is a detected community, "
+            "same as the hour-by-hour graph above. Only the biggest hubs keep a permanent "
+            "label; hover any node for its name."
         ),
         "community.chart.network": "Shared-audience network",
+        "community.network_min_weight": "Minimum shared chatters to show a connection",
+        "community.network_filtered_caption": (
+            "Showing {edges} of {total_edges} connections ({nodes} of {total_nodes} channels) "
+            "— raise the slider for a clearer picture, lower it to see more of the long tail."
+        ),
+        "community.weight_picker": "Weight connections by",
+        "community.weight.shared_count": "Shared chatters (raw count)",
+        "community.weight.jaccard": "Jaccard index (normalized overlap)",
+        "community.weight.jaccard_caveat": (
+            "Jaccard index = shared chatters ÷ chatters in *either* channel — two small "
+            "channels that share most of their (small) audiences can outrank two huge "
+            "channels with more shared chatters in absolute terms but a smaller overlap "
+            "relative to their size. Raw count favors big channels; this favors tight-knit "
+            "ones regardless of size."
+        ),
+        "community.weight.shared_count_hover_label": "shared chatters",
+        "community.weight.jaccard_hover_label": "Jaccard overlap",
         "community.explain.growth": (
             "The cumulative count of distinct chatters seen so far, over time — always "
             "flat or rising."
         ),
+        "community.retention_heading": "Chatter retention, day by day",
+        "community.no_retention": "Not enough days of data yet to measure retention.",
+        "community.retention_caption": (
+            "Of the chatters active on the event's very first day, how many came back on "
+            "each day after — event-wide, not affected by the sidebar date filter."
+        ),
+        "community.retention_day_label": "Day {day}",
+        "community.chart.retention": "Day-0 chatters still active, by day",
+        "community.retention_live_caveat": (
+            "⚠️ If the event is still live, the most recent day shown is still in progress "
+            "— its figure is a floor, not a final count."
+        ),
+        "community.explain.retention": (
+            "\"Day\" is counted from the event's own start (its first message), not the "
+            "calendar clock — day 0 is the first full 24 hours, day 1 the next, and so on. "
+            "The percentage is the share of day-0 chatters still chatting that day; a "
+            "chatter who left and came back later still counts."
+        ),
+        "community.new_by_channel_heading": "New chatters by channel",
+        "community.no_new_by_channel": "No new-chatter data in this range yet.",
+        "community.new_by_channel_caption": (
+            "Top {shown} of {total} channels by first-time chatters brought in."
+        ),
+        "community.chart.new_by_channel": "New chatters per channel",
+        "community.explain.new_by_channel": (
+            'A chatter counts as "new to this channel" the first time they message '
+            "there — even a loyal chatter elsewhere in the event counts as new here."
+        ),
         "community.explain.hourly_network": (
             "One node per channel, one edge per pair of channels that shared chatters "
-            "that hour — thicker/darker edges mean more shared chatters. Each node has its "
-            "own fixed color, so the same channel is easy to spot across different hours."
+            "that hour — thicker/darker edges mean more shared chatters. Nodes are colored "
+            "by detected community (modularity clustering: which channels' audiences "
+            "overlap with each other more than with the rest) and positioned near their "
+            "community's own cluster, so structure is visible at a glance instead of a "
+            "random tangle. Node size tracks total shared audience (weighted degree); "
+            "only the biggest hubs get a permanent label — hover any node for its name, "
+            "or an edge for its exact shared-chatter count."
         ),
         "community.explain.loyalty_mix": (
             "How many chatters only ever chat in one channel (loyal) vs. spread their "
@@ -415,8 +758,21 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         ),
         "community.explain.network": (
             "One node per channel, sized by how many other channels it shares an audience "
-            "with; one edge per channel pair, thicker/darker for more shared chatters. "
-            "Event-wide, unlike the hour-by-hour graph above it."
+            "with, colored by detected community and positioned near its cluster; one edge "
+            "per channel pair, thicker/darker for more shared chatters. Event-wide, unlike "
+            "the hour-by-hour graph above it. Hover a node for its name and degree, or an "
+            "edge for its exact shared-chatter count."
+        ),
+        "community.migrations_heading": "Channel hopping",
+        "community.no_migrations": "No channel-hopping data available yet.",
+        "community.migrations_caption": "How often chatters move directly from one channel to another.",
+        "community.chart.migrations": "Chatter migrations between channels",
+        "community.explain.migrations": (
+            "A flow diagram, not a network graph: migrations are directed (and a channel "
+            "pair often has hops in both directions), so each channel appears once on the "
+            "left as an origin and once on the right as a destination. Band width scales "
+            "with how many chatters made that specific hop — hover a band for the exact "
+            "count. Event-wide, not affected by the sidebar date filter."
         ),
         # --- tracker ---
         "tracker.description": (
@@ -430,6 +786,15 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "tracker.per_streamer_heading": "Per streamer",
         "tracker.no_streamers": "No streamer data available yet.",
         "tracker.pick_streamer": "Pick a streamer",
+        "tracker.pick_streamer_single": (
+            "Showing **{streamer}** — narrowed by the sidebar streamer filter."
+        ),
+        "tracker.category_filter": "Goal category",
+        "tracker.category_filter_help": (
+            "Each category is tracked as its own independent start/complete chain — mixing "
+            "several on the timeline below can show unrelated goals' time spans crossing "
+            "each other, so narrow to one to read it cleanly."
+        ),
         "tracker.no_goals": "No trackable donation goals for this streamer yet.",
         "tracker.kpi.total": "Goals tracked",
         "tracker.kpi.done": "Done",
@@ -454,6 +819,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "tracker.duration_axis": "hours",
         "tracker.table_heading": "All goals",
         "tracker.table_caption": "Every goal, with exact duration in hours and seconds.",
+        "tracker.column.category": "Category",
         "tracker.column.goal": "Goal",
         "tracker.column.amount": "Amount",
         "tracker.column.status": "Status",
@@ -510,8 +876,34 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "in, vertical position is total messages, colored by loyalty profile."
         ),
         "chatters.chart.correlation": "Channels chatted in vs. total messages",
+        "chatters.correlation_stat": (
+            "Pearson r = {r} between channel breadth and total messages, across the chatters "
+            "shown (1 = perfectly linear together, 0 = no linear relationship). Linear "
+            "association only — it doesn't imply one causes the other."
+        ),
+        "chatters.correlation_stat_na": (
+            "Not enough chatters shown (or no variation in one axis) to compute a correlation."
+        ),
+        "chatters.lifespan_heading": "How long chatters stick around",
+        "chatters.lifespan_caption": (
+            "Time between a chatter's first and last message — a proxy for how engaged "
+            "they were, not just how much they posted."
+        ),
+        "chatters.chart.lifespan": "Chatters by engagement lifespan",
+        "chatters.lifespan.single_message": "Single message",
+        "chatters.lifespan.under_1h": "< 1 hour",
+        "chatters.lifespan.1_to_6h": "1 - 6 hours",
+        "chatters.lifespan.6_to_24h": "6 - 24 hours",
+        "chatters.lifespan.24h_plus": "24+ hours",
+        "chatters.explain.lifespan": (
+            "\"Single message\" means their first and last message are the same one — "
+            "typically a drive-by chatter, not necessarily a bot (see the bot heuristic "
+            "above for that). The right-hand bars are chatters who kept coming back over "
+            "hours, sometimes the whole event."
+        ),
         "chatters.profile_heading": "Chatter profile",
         "chatters.pick_chatter": "Pick a chatter for a detailed profile",
+        "chatters.kpi.global_total": "Total messages (all channels)",
         "chatters.kpi.channels": "Channels chatted in",
         "chatters.kpi.top_channel_share": "Share of messages in top channel",
         "chatters.kpi.account_age": "Account age",
@@ -521,6 +913,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "value means very regular timing, one bot-likelihood signal among others."
         ),
         "chatters.no_channel_data": "No per-channel activity available yet for this chatter.",
+        "chatters.chart.global_bar_label": "Global (all channels)",
         "chatters.chart.channel_breakdown": "{chatter}'s messages by channel",
         "chatters.explain.channel_breakdown": (
             "How this chatter's messages are split across the channels they chat in."
@@ -531,6 +924,158 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "one-way pseudonym, so a downloaded file can never be traced back to a real "
             "person."
         ),
+        "chatters.by_channel_heading": "Chatters in one channel",
+        "chatters.by_channel_caption": (
+            "Pick a channel to see everyone who chatted there — badge type (subscriber/VIP/"
+            "moderator/plain viewer), message count, first/last activity, and emote usage."
+        ),
+        "chatters.pick_channel": "Pick a channel",
+        "chatters.badge_filter": "Filter by badge",
+        "chatters.kpi.moderators": "Moderators",
+        "chatters.kpi.subscribers": "Subscribers",
+        "chatters.chart.badge_mix": "{channel}'s messages by chatter badge",
+        "chatters.explain.badge_mix": (
+            "Each chatter counts toward exactly one badge tier here (moderator/broadcaster > "
+            "VIP > subscriber > plain viewer — Twitch's own display order), based on the "
+            "badges attached to their messages in this channel, so the tiers never overlap."
+        ),
+        "chatters.rank.emotes": "Emote uses",
+        "chatters.chart.channel_ranked": "{channel}'s chatters by {metric}",
+        "chatters.explain.channel_ranked": (
+            "The top N chatters in this channel, ranked by whichever metric is selected "
+            "above — total messages, or total emote uses (summed from every emote in every "
+            "one of their messages, not just distinct emotes)."
+        ),
+        "chatters.by_channel_table_caption": (
+            "One row per chatter, with their badge-tier message counts, first/last message "
+            "time, and total emote usage in this channel."
+        ),
+        # --- messages ---
+        "messages.title": "Chat Messages",
+        "messages.description": (
+            "Search and browse individual chat messages by datetime, streamer, and chatter."
+        ),
+        "messages.no_data": "No chat data available yet.",
+        "messages.filters": "Filters",
+        "messages.channel_filter": "Streamer",
+        "messages.all_channels": "All streamers",
+        "messages.chatter_search": "Chatter contains",
+        "messages.text_search": "Message contains",
+        "messages.limit_label": "Max results",
+        "messages.limit_caveat": (
+            "Showing the {limit} most recent matching messages — narrow the filters to see "
+            "further back."
+        ),
+        "messages.kpi.shown": "Messages shown",
+        "messages.kpi.channels": "Streamers",
+        "messages.kpi.chatters": "Chatters",
+        "messages.time_heading": "When these messages happened",
+        "messages.time_caption": (
+            "Hourly count of the messages currently shown above (after filters and the "
+            "result limit) — not the full event-wide activity chart on the Live Chat page."
+        ),
+        "messages.chart.time": "Messages shown, over time",
+        "messages.explain.time": (
+            "Bucketed by hour. If the result count hit the max-results limit, this only "
+            "covers the most recent matching messages, not every match in the selected "
+            "date range — narrow the filters to see further back."
+        ),
+        "messages.breakdown_heading": "Who and where",
+        "messages.breakdown_caption": (
+            "Top channels and chatters among the messages currently shown — same "
+            "limit-truncation caveat as the chart above."
+        ),
+        "messages.chart.top_channels": "Top streamers, by messages shown",
+        "messages.chart.top_chatters": "Top chatters, by messages shown",
+        "messages.explain.breakdown": (
+            "The busiest streamers and chatters within the current search results, not "
+            "event-wide — e.g. searching a specific word shows who says it most, not who "
+            "chats the most overall."
+        ),
+        "messages.table_heading": "Messages",
+        "messages.table_caption": "Most recent matching messages first.",
+        "messages.column.datetime": "Sent at",
+        "messages.column.streamer": "Streamer",
+        "messages.column.chatter": "Chatter",
+        "messages.column.message": "Message",
+        "messages.column.badge": "Badge",
+        "messages.chart.badge_mix": "Messages shown, by chatter badge",
+        "messages.explain.badge_mix": (
+            "How the messages currently shown split across moderator, VIP, subscriber, "
+            "and plain-viewer badges."
+        ),
+        # --- leaderboard ---
+        "leaderboard.title": "Leaderboard",
+        "leaderboard.description": (
+            "Who's winning, all in one place — top streamers by donations and audience, top "
+            "chatters, and each streamer's #1 fan. Event-wide standings, not a moving window."
+        ),
+        "leaderboard.no_data": "No streamer data available yet.",
+        "leaderboard.top_n": "Show top N",
+        "leaderboard.column.rank": "Rank",
+        "leaderboard.column.streamer": "Streamer",
+        "leaderboard.column.amount": "Amount",
+        "leaderboard.column.chatter": "Chatter",
+        "leaderboard.column.top_fan": "Top fan",
+        "leaderboard.column.messages": "Messages",
+        "leaderboard.donations_heading": "Top streamers by donations",
+        "leaderboard.donations_caption": (
+            "Event-wide totals — the same figures as the Donations page's own podium and the "
+            "Streamers page's donation ranking, consolidated here."
+        ),
+        "leaderboard.chart.donations_podium": "Top 3 by donations raised",
+        "leaderboard.explain.donations": (
+            "Ranked by total donations raised, event-wide, regardless of the sidebar date filter."
+        ),
+        "leaderboard.chatters_heading": "Top chatters, event-wide",
+        "leaderboard.chatters_caption": (
+            "The most active chatters across the whole event — same figures as the Chatters "
+            "page's own ranking, consolidated here."
+        ),
+        "leaderboard.chart.chatters_podium": "Top 3 by messages sent",
+        "leaderboard.explain.chatters": (
+            "Ranked by total messages sent, event-wide, across every channel a chatter posted in."
+        ),
+        "leaderboard.fans_heading": "Top fan, per streamer",
+        "leaderboard.fans_caption": (
+            "For every streamer, the single chatter who posted the most messages in their "
+            "channel — not shown anywhere else in the app. Search by streamer name to jump "
+            "to one."
+        ),
+        "leaderboard.fans_search": "Search by streamer name",
+        "leaderboard.explain.fans": (
+            "One row per streamer: their busiest individual chatter and how many messages "
+            "that chatter sent there. A streamer's #1 fan doesn't need to be a globally "
+            "top-ranked chatter — a small streamer's most active viewer can rank highly here "
+            "while barely registering event-wide."
+        ),
+        "leaderboard.audience_heading": "Top streamers by audience & efficiency",
+        "leaderboard.audience_caption": (
+            "The first two metrics mirror the Streamers page's own ranking (minus "
+            "donations, covered above); the three efficiency ones are new — different "
+            "denominators (per viewer, per chatter, per hour) tell different stories about "
+            "how well a streamer converts their stream into donations. Pick one to see who "
+            "leads it."
+        ),
+        "leaderboard.metric_picker": "Rank by",
+        "leaderboard.metric.viewers": "Audience (avg. viewers)",
+        "leaderboard.metric.engagement": "Chat engagement (messages)",
+        "leaderboard.metric.efficiency": "€ per viewer",
+        "leaderboard.metric.efficiency_chatters": "€ per unique chatter",
+        "leaderboard.metric.rate": "€ per hour streamed",
+        "leaderboard.rate_caveat": (
+            "⚠️ A streamer live only a few hours can post an extreme rate off a single big "
+            "donation — this is a real ratio, not a bug, but treat a very short "
+            "`hours_live` as a reason to look closer, not as proof of sustained pace."
+        ),
+        "leaderboard.chart.audience_podium": "Top 3 by {metric}",
+        "leaderboard.explain.audience": (
+            "Ranked by whichever metric is selected above — average viewers, chat messages, "
+            "donations per viewer or per unique chatter (audience-efficiency, two "
+            "different denominators — a chatter is a more engaged subset of viewers), or "
+            "donations per hour actually streamed (time-efficiency, independent of "
+            "audience size)."
+        ),
         # --- activity ---
         "activity.title": "Stream Activity",
         "activity.description": (
@@ -540,7 +1085,6 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "activity.no_streamers": "No streamer data available yet.",
         "activity.pick_streamer": "Pick a streamer",
         "activity.no_data": "No title/category history available yet for this streamer.",
-        "activity.filters": "Filters",
         "activity.kpi.segments": "Activity segments",
         "activity.kpi.categories": "Distinct categories",
         "activity.kpi.tracked_duration": "Time tracked",
@@ -564,6 +1108,572 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "across every segment (a category can appear more than once in the timeline "
             "above if the streamer returned to it later)."
         ),
+        # --- about ---
+        "about.title": "About",
+        "about.description": "What this dashboard is, where its data comes from, and how it's built.",
+        "about.what_heading": "What is ZEvent?",
+        "about.what_body": (
+            "[ZEvent](https://zevent.fr) is a French charity gaming marathon: dozens of "
+            "Twitch streamers broadcast together for a fixed stretch (this run: "
+            "**September 3-6, 2026**), and viewers donate live to a cause chosen ahead of "
+            "the event. It's one of the largest charity streaming events in the "
+            "French-speaking world."
+        ),
+        "about.dashboard_heading": "What this dashboard does",
+        "about.dashboard_body": (
+            "This app is a read-only window onto the event's data warehouse, updated as "
+            "the event happens. It covers donations, streamer performance, games/categories, "
+            "donation goals, live chat, the chatter community, and per-streamer activity — "
+            "nine pages in total, linked from the home page."
+        ),
+        "about.pipeline_heading": "How the data flows",
+        "about.pipeline_body": (
+            "Two independent pipelines feed the warehouse: ZEvent's own donations/goals "
+            "site, and Twitch's stream/chat metadata — the latter streamed in through "
+            "[Apache NiFi](https://nifi.apache.org/). Both land in the same PostgreSQL "
+            "warehouse, modeled with [dbt](https://www.getdbt.com/) across four schema "
+            "layers, each building on the one before it:"
+        ),
+        "about.pipeline.raw": "Untouched, as-ingested data — the Twitch chat firehose and ZEvent donation-site snapshots, exactly as captured.",
+        "about.pipeline.stg": "Bronze-layer staging — raw records normalized into a consistent shape (types, column names) without changing their meaning.",
+        "about.pipeline.int": "Intermediate models — per-chatter, per-channel, per-hour aggregates built from staging (e.g. \"messages per channel per hour\").",
+        "about.pipeline.marts": "Query-ready marts — the tables this dashboard actually reads from, one or more per page (e.g. the chatter leaderboard, the donation timeseries).",
+        "about.pipeline.column_schema": "Schema",
+        "about.pipeline.column_purpose": "Purpose",
+        "about.infra_heading": "Infrastructure & monitoring",
+        "about.infra_body": (
+            "The pipeline and its hosting are provisioned as code (infrastructure as "
+            "code), not set up by hand. [Prometheus](https://prometheus.io/) and "
+            "[Grafana](https://grafana.com/) monitor the pipeline and warehouse "
+            "(ingestion lag, job failures, table freshness), and "
+            "[ntfy](https://ntfy.sh/) pushes alerts when something needs attention — "
+            "this dashboard is a read-only consumer of the warehouse those alerts "
+            "protect, not part of the alerting path itself."
+        ),
+        "about.freshness_heading": "Data freshness",
+        "about.freshness_body": (
+            "Every page query is cached for 60 seconds, so the numbers you see can lag the "
+            "live event by up to a minute. Because this is a *live* event, a few marts need "
+            "an hour to fully close before they're computed for it — most visibly, the "
+            "chatter-community network's most recent hour can briefly show no data until "
+            "that hour's pipeline run catches up. This dashboard picks the latest hour that "
+            "already has data by default, so you shouldn't normally see it — but it's why "
+            "the hour picker can still land on an empty one if you scrub to the very edge."
+        ),
+        "about.privacy_heading": "Privacy",
+        "about.privacy_body": (
+            "Twitch usernames are real and shown on-screen, same as they'd appear in the "
+            "channel itself. Any CSV export that includes a chatter identifier replaces it "
+            "with a one-way pseudonym first (see the Chatters page), so a downloaded file "
+            "can never be traced back to a real person."
+        ),
+        "about.stack_heading": "Built with",
+        "about.stack_body": (
+            "[Streamlit](https://streamlit.io) for the app itself, "
+            "[Polars](https://pola.rs) for every in-app transform, "
+            "[Plotly](https://plotly.com/python/) for the charts, "
+            "[dbt](https://www.getdbt.com/) + PostgreSQL for the warehouse, all in Python."
+        ),
+        "about.related_heading": "Related projects",
+        "about.related_body": (
+            "This app is part of a small ecosystem: `zevent-analysis` (deeper offline "
+            "analysis), `zevent-db` (the warehouse this app reads from), and "
+            "`zevent-infra-monitoring` (pipeline/infra monitoring). This dashboard is "
+            "currently the only one of the four with a working deliverable."
+        ),
+        # --- chat intelligence ---
+        "chatintel.title": "Chat Intelligence",
+        "chatintel.description": (
+            "Lightweight, no-training-data analysis of live chat text: which channels' "
+            "chat is most excitable, positive, or hostile; which messages are being "
+            "copy-pasted; and which words are trending in one channel's chat over time. "
+            "See \"How these measures are computed\" below for the exact methodology."
+        ),
+        "chatintel.methodology_heading": "How these measures are computed",
+        "chatintel.methodology_intro": (
+            "Every measure below is a lexicon/heuristic — counting words and patterns "
+            "— not a trained machine-learning model. That's deliberate, not a "
+            "shortcut: real ZEvent chat is short, French, emote-heavy, and unlabeled, "
+            "and a plain regex over the underlying ~7.7 million message table "
+            "reliably times out at full scale (see \"Sampling\" near the bottom). In "
+            "every formula, $p_x$ means \"the fraction of sampled messages matching "
+            "condition $x$.\""
+        ),
+        "chatintel.methodology_hype_intro": (
+            "Hype score (0-100) — a blend of heavy punctuation, ALL-CAPS shouting, "
+            "and hype-emote mentions, weighted 40/30/30:"
+        ),
+        "chatintel.methodology_hype_terms": (
+            "p_punct = messages containing \"!!\" or more · p_caps = whole-message "
+            "ALL-CAPS with at least 4 letters · p_emote = messages mentioning a known "
+            "hype emote."
+        ),
+        "chatintel.methodology_hype_tunable": (
+            "The weights (w) default to 0.4/0.3/0.3 but are yours to tune — see the "
+            "sliders in the Chat hype meter section below."
+        ),
+        "chatintel.methodology_sentiment_intro": (
+            "Sentiment score (-100 to +100) — positive-word rate minus hostile-word "
+            "rate:"
+        ),
+        "chatintel.methodology_toxicity_intro": (
+            "Toxicity score (0-100) — that same hostile-word rate alone:"
+        ),
+        "chatintel.methodology_words_intro": (
+            "The exact word lists currently in use — every word here was tested "
+            "individually against real chat before being kept; several intuitive "
+            "first guesses (\"con\", \"cretin\", \"stupide\", \"pourri\") failed and were "
+            "dropped, see below. Matching also requires a word boundary right "
+            "before the word (not a bare substring): a real-data audit found "
+            "\"idiot\" as a plain substring also matched Twitch emote codes "
+            "(\"melokaIdiot\") and someone's actual username being mentioned "
+            "(\"@je_un_idiot\") — a word boundary rules both out, while still "
+            "catching plurals and emphasis-lengthened forms (\"connards\", "
+            "\"CONNASSEEEE\") a *stricter* boundary on both sides would have missed."
+        ),
+        "chatintel.methodology_positive_words_label": "Positive words:",
+        "chatintel.methodology_hype_emote_words_label": "Hype-emote words:",
+        "chatintel.methodology_hostile_words_label": "Hostile words:",
+        "chatintel.methodology_examples_pointer": (
+            "Curious what actually counts as \"hostile\"? Open \"See example flagged "
+            "messages\" under Chat toxicity below to check real matches yourself."
+        ),
+        "chatintel.methodology_keywords_intro": (
+            "Trending keywords — TF-IDF over one channel's messages, pooling all of "
+            "an hour's text into one \"document\":"
+        ),
+        "chatintel.methodology_keywords_terms": (
+            "N_hours = total hours in the channel's history · df(w) = number of "
+            "hours word w appears in at least once."
+        ),
+        "chatintel.methodology_phrases_intro": (
+            "Trending phrases — no formula needed: the same message (lowercased, "
+            "whitespace-trimmed) sent at least 5 times within one channel's one "
+            "hour, counted directly."
+        ),
+        "chatintel.methodology_correlation_intro": (
+            "Chat mood vs. donation pace — the standard Pearson correlation "
+            "coefficient between the event-wide hourly mood score and that hour's "
+            "donation pace:"
+        ),
+        "chatintel.methodology_sampling_intro": (
+            "Sampling — every channel-wide measure above (hype, sentiment, "
+            "toxicity, trending phrases) runs on a random sample sized to stay "
+            "fast, not every message:"
+        ),
+        "chatintel.methodology_sampling_terms": (
+            "N_target = 250,000 messages (300,000 for trending phrases) · N_total "
+            "= messages in the selected window. A window already smaller than the "
+            "target uses every message (sample_rate = 1)."
+        ),
+        "chatintel.methodology_toxicity_privacy": (
+            "The toxicity *score* above is a channel-level trend by design — it's "
+            "about which channels' chat is running hot, not about singling out a "
+            "chatter. The example messages below it, and the ML Lab's own toxicity "
+            "tools, do show the real chatter who sent a flagged message (same as "
+            "every other chatter-listing page in this app) — but the heuristic still "
+            "gets things wrong (see the word list above and its known false "
+            "positives), so treat a flag as something to check in context, not a "
+            "verdict on the person."
+        ),
+        "chatintel.no_streamers": "No streamer data available yet.",
+        "chatintel.hype_heading": "Chat hype meter",
+        "chatintel.hype_weight_punct": "Punctuation weight",
+        "chatintel.hype_weight_caps": "ALL-CAPS weight",
+        "chatintel.hype_weight_emote": "Hype-emote weight",
+        "chatintel.hype_top_n": "Show top N channels",
+        "chatintel.hype_caption": (
+            "The top channels overall by chat \"hype\" — a heuristic blend of "
+            "exclamation-heavy messages, ALL-CAPS shouting, and hype-emote mentions, "
+            "not raw message volume. A smaller, more excitable community can out-hype a "
+            "much bigger, calmer one. Drag the three weights below to change how much "
+            "each signal counts — the chart recomputes instantly, no reload needed."
+        ),
+        "chatintel.chart.hype": "Chat hype score, over time",
+        "chatintel.unit.hype_score": "hype score",
+        "chatintel.no_hype": "No hype data available yet.",
+        "chatintel.explain.hype": (
+            "Hype score (0-100) blends three signals per message, averaged per hour: "
+            "\"!!\"-or-more punctuation, whole-message ALL-CAPS shouting, and mentions of "
+            "well-known hype emotes (LUL, KEKW, PogChamp, ...) — weighted by the three "
+            "sliders above (0.4/0.3/0.3 by default). The three raw rates are fetched "
+            "once per date range and the weighting is recomputed in the browser, so "
+            "moving a slider never re-queries the database. Computed from a random "
+            "sample of that hour's messages (hours with too few sampled messages are "
+            "dropped) rather than a full scan, since a live per-message analysis over "
+            "the whole event is too slow to run on demand. Hover a point for its exact "
+            "rank that hour among every channel."
+        ),
+        "chatintel.sentiment_heading": "Chat sentiment",
+        "chatintel.sentiment_top_n": "Show top N channels",
+        "chatintel.sentiment_caption": (
+            "The most positive channels overall, hour by hour — positive-word rate minus "
+            "hostile-word rate. Not the same as hype above: a channel can be highly "
+            "positive without being loud, or loud without being especially positive."
+        ),
+        "chatintel.chart.sentiment": "Chat sentiment score, over time",
+        "chatintel.unit.sentiment_score": "sentiment score",
+        "chatintel.no_sentiment": "No sentiment data available yet.",
+        "chatintel.explain.sentiment": (
+            "Sentiment score (-100 to +100) is a curated positive-word rate (\"merci\", "
+            "\"super\", \"bravo\", \"excellent\", ...) minus the same hostile-word rate "
+            "toxicity (below) uses, averaged per hour, computed the same sampled way as "
+            "hype (see \"How these measures are computed\" above). Hover a point for its "
+            "exact rank that hour among every channel."
+        ),
+        "chatintel.toxicity_heading": "Chat toxicity",
+        "chatintel.toxicity_top_n": "Show top N channels",
+        "chatintel.toxicity_caption": (
+            "The most hostile channels overall, hour by hour — how the chat's most "
+            "negative language shifts between channels over the event. This tracks "
+            "*channels*, not chatters: no chatter is ever named or flagged as \"toxic\" "
+            "here, on purpose (see \"How these measures are computed\" above)."
+        ),
+        "chatintel.chart.toxicity": "Chat toxicity score, over time",
+        "chatintel.unit.toxicity_score": "toxicity score",
+        "chatintel.no_toxicity": "No toxicity data available yet.",
+        "chatintel.explain.toxicity": (
+            "Toxicity score (0-100) is a curated hostile-word rate (\"connard\", "
+            "\"idiot\", \"dégage\", \"ta gueule\", ...), averaged per hour, computed the "
+            "same sampled way as hype (see \"How these measures are computed\" above). "
+            "It measures hostile-language density, not a certified harassment/hate-speech "
+            "classifier — it will miss slurs and hostility that avoid these exact words, "
+            "and can't tell a targeted insult from banter between friends. Hover a point "
+            "for its exact rank that hour among every channel."
+        ),
+        "chatintel.toxicity_examples_heading": "See example flagged messages",
+        "chatintel.toxicity_examples_caption": (
+            "A random sample of messages the hostile-word list above matched in the "
+            "selected window — check the heuristic's work yourself. Shows the real "
+            "channel and chatter, same as the Chatters/Streamers/Community pages — "
+            "but the word list still makes mistakes (see the false-positive caveat "
+            "above), so treat a match here as a lead to look at, not a verdict."
+        ),
+        "chatintel.no_toxicity_examples": "No flagged messages in the selected range yet.",
+        "chatintel.column.chatter": "Chatter",
+        "chatintel.column.message": "Message",
+        "chatintel.correlation_heading": "Chat mood vs. donation pace",
+        "chatintel.correlation_caption": (
+            "Does chat excitement or positivity actually track how much is being "
+            "donated? Hype and sentiment here are averaged across every channel each "
+            "hour, not just the top N — a single, event-wide mood per hour, matched "
+            "against that same hour's donation pace."
+        ),
+        "chatintel.no_correlation": "Not enough overlapping hours to compute a correlation yet.",
+        "chatintel.correlation_summary": (
+            "Over {n} hours: hype correlates at r = {hype_corr} with donation pace; "
+            "sentiment correlates at r = {sentiment_corr}. A coefficient near 0 means no "
+            "relationship, near +1/-1 a strong one — with only a few dozen hours, treat "
+            "these as a rough signal, not a precise measurement, and remember "
+            "correlation isn't causation."
+        ),
+        "chatintel.chart.correlation": "Chat hype vs. donation pace, one point per hour",
+        "chatintel.explain.correlation": (
+            "Each point is one hour: its event-wide average hype score (x-axis) against "
+            "how much was donated that hour (y-axis). A point cloud that trends upward "
+            "left-to-right suggests hype and giving move together that hour; a flat or "
+            "scattered cloud suggests they don't. Computed from "
+            "`chat_mood_timeseries` (same sampling as hype/sentiment above) joined to "
+            "the donations page's own hourly pace."
+        ),
+        "chatintel.phrases_heading": "Trending phrases & copypasta",
+        "chatintel.phrases_top_n": "Show top N phrases",
+        "chatintel.phrases_caption": (
+            "The most-repeated exact messages (case/whitespace normalized) sent within "
+            "one channel's one hour, event-wide — Twitch chat's classic \"copypasta\" "
+            "pattern: the same line spammed by many chatters in a burst."
+        ),
+        "chatintel.no_phrases": "No repeated phrases found yet.",
+        "chatintel.column.hour": "Hour",
+        "chatintel.column.channel": "Channel",
+        "chatintel.column.phrase": "Phrase",
+        "chatintel.column.repeat_count": "Repeat count",
+        "chatintel.explain.phrases": (
+            "Counted from a random sample of each hour's messages, not a full scan (same "
+            "reason as the hype meter above) — real repeat counts are higher than shown. "
+            "Only phrases repeated at least 5 times within the sampled hour are kept, to "
+            "filter out coincidental short messages a couple of chatters happened to both "
+            "send once."
+        ),
+        "chatintel.keywords_heading": "Trending keywords per channel",
+        "chatintel.pick_channel": "Pick a channel",
+        "chatintel.keywords_caption": (
+            "One channel's most distinctive chat words, hour by hour — a word that "
+            "suddenly spikes in one hour (a shoutout, a running joke, a donation-goal "
+            "reveal) ranks above words used at a similar low rate all the time."
+        ),
+        "chatintel.no_keywords": "No chat data available for this channel yet.",
+        "chatintel.column.keywords": "Top keywords",
+        "chatintel.explain.keywords": (
+            "Uses every message from the selected channel (no sampling needed — a single "
+            "channel's messages are cheap to fetch in full). Each hour's words are scored "
+            "by TF-IDF: how often a word appears that hour, weighted up the rarer it is "
+            "across the channel's other hours — the same statistic search engines use to "
+            "tell a distinctive word from a common one. No sentiment or topic model is "
+            "involved."
+        ),
+        # --- chat ml lab ---
+        "chatml.title": "Chat ML Lab",
+        "chatml.description": (
+            "Real, trained machine-learning models over live chat — heavier and slower "
+            "than Chat Intelligence's word-list heuristics, for questions those can't "
+            "answer: what topics does chat actually discover, what behavioral chatter "
+            "segments exist, and does a real model even agree with the lexicon?"
+        ),
+        "chatml.topics_heading": "Message topic clusters",
+        "chatml.topics_caption": (
+            "Real unsupervised clustering (K-Means over TF-IDF), not keyword ranking — "
+            "each channel's hour of chat is pooled into one \"document\" and grouped "
+            "with similar hours across the whole event, discovering actual topics (a "
+            "Twitch-plays-style voting moment, a channel's own emote-heavy banter, "
+            "donation-goal talk, ...) rather than just counting words."
+        ),
+        "chatml.topics_n_clusters": "Number of topic clusters",
+        "chatml.no_topics": "Not enough messages in the selected range to form topic clusters yet.",
+        "chatml.chart.topics": "Topic cluster sizes (channel-hours)",
+        "chatml.column.cluster": "Cluster",
+        "chatml.column.channel_hours": "Channel-hours",
+        "chatml.column.top_terms": "Top terms",
+        "chatml.explain.topics": (
+            "Each channel-hour with enough sampled messages becomes one TF-IDF "
+            "\"document\"; K-Means groups similar documents together. A cluster's "
+            "\"top terms\" are the words that most define its centroid — not "
+            "necessarily its single most common word, but the words that most "
+            "distinguish it from every other cluster. Clustering raw individual "
+            "messages was tried first and rejected: real chat messages are so short "
+            "that almost all of them ended up in one meaningless catch-all cluster; "
+            "pooling by channel-hour first fixes that."
+        ),
+        "chatml.streamers_heading": "Streamer behavioral segments",
+        "chatml.streamers_caption": (
+            "Real unsupervised clustering (K-Means) over each streamer's performance "
+            "shape — donations raised, audience size, hours live, uptime — grouping "
+            "streamers by how their event went, not by category or team (there is no "
+            "team dimension in this data)."
+        ),
+        "chatml.streamers_n_clusters": "Number of behavioral segments",
+        "chatml.no_streamers_ml": (
+            "Not enough streamers in the selected range to form behavioral segments yet."
+        ),
+        "chatml.column.streamers": "Streamers",
+        "chatml.column.avg_amount": "Avg. donations (€)",
+        "chatml.column.avg_avg_viewers": "Avg. viewers",
+        "chatml.column.avg_hours_live": "Avg. hours live",
+        "chatml.column.avg_uptime_pct": "Avg. uptime %",
+        "chatml.column.streamer": "Streamer",
+        "chatml.column.amount": "Donations (€)",
+        "chatml.column.avg_viewers_short": "Avg. viewers",
+        "chatml.streamers_examples_heading": "See example streamers per cluster",
+        "chatml.explain.streamers": (
+            "Every feature is log-transformed before clustering, same reasoning as "
+            "chatter segments below — real donation/audience figures are heavily "
+            "skewed (confirmed against real data: total donations range from €0 to "
+            "over €2M against a €3.3k median), and without that transform a handful "
+            "of mega-fundraisers would dominate cluster formation instead of the "
+            "shape of the bulk of the field."
+        ),
+        "chatml.chatters_heading": "Chatter behavioral segments",
+        "chatml.chatters_caption": (
+            "Real unsupervised clustering (K-Means) over each chatter's activity "
+            "shape — how many channels they visit, how much they post, how long they "
+            "stick around — richer than a fixed \"sedentary / nomadic\" label since "
+            "the segments are discovered from the data itself, not defined ahead of "
+            "time. Likely-bot accounts are excluded first."
+        ),
+        "chatml.chatters_n_clusters": "Number of behavioral segments",
+        "chatml.no_chatters": (
+            "Not enough chatters in the selected range to form behavioral segments yet."
+        ),
+        "chatml.column.chatters": "Chatters",
+        "chatml.column.chatter": "Chatter",
+        "chatml.column.avg_channels": "Avg. channels",
+        "chatml.column.avg_messages": "Avg. messages",
+        "chatml.column.avg_lifespan_hours": "Avg. lifespan (h)",
+        "chatml.column.avg_messages_per_channel": "Avg. messages / channel",
+        "chatml.chatters_examples_heading": "See example chatters per cluster",
+        "chatml.explain.chatters": (
+            "Every feature is log-transformed before clustering — real chatter "
+            "activity is heavily skewed (a handful of accounts post thousands of "
+            "times more than the median), and without that transform a few extreme "
+            "accounts would dominate cluster formation instead of the shape of the "
+            "bulk of the population. Compare a cluster's own averages against the "
+            "others' to see what defines it — a high avg. messages/channel with few "
+            "channels visited reads as \"loyal superfan\"; many channels with few "
+            "total messages reads as \"channel-hopping lurker\"."
+        ),
+        "chatml.outliers_heading": "Outlier detection",
+        "chatml.outliers_caption": (
+            "Real unsupervised anomaly detection (Isolation Forest) — flags "
+            "streamers, chatters, or chat-mood hours whose numbers look nothing like "
+            "the typical case, in *either* direction. Confirmed against real data: "
+            "this surfaces both the event's biggest fundraisers and its "
+            "near-inactive placeholder entries as \"statistically unusual\" at once — "
+            "an outlier isn't automatically a problem, just unusual."
+        ),
+        "chatml.outliers_target_label": "Look for outliers among",
+        "chatml.outliers_target_streamers": "Streamers",
+        "chatml.outliers_target_chatters": "Chatters",
+        "chatml.outliers_target_hours": "Chat-mood hours",
+        "chatml.outliers_contamination": "Expected outlier fraction",
+        "chatml.no_outliers": "Not enough rows in the selected range to detect outliers yet.",
+        "chatml.column.uptime_pct": "Uptime %",
+        "chatml.column.anomaly_score": "Anomaly score",
+        "chatml.column.hour": "Hour",
+        "chatml.column.avg_hype": "Avg. hype score",
+        "chatml.column.avg_sentiment": "Avg. sentiment score",
+        "chatml.explain.outliers": (
+            "\"Expected outlier fraction\" is Isolation Forest's one tuning knob — "
+            "raise it to see more (and less extreme) rows flagged, lower it to see "
+            "only the most extreme few. \"Anomaly score\" is the model's own "
+            "decision function: more negative means more anomalous, so the most "
+            "unusual rows sort first. Streamer/chatter features are log-transformed "
+            "first for the same skew reasons as their clustering sections above; "
+            "chat-mood hours are not, since sentiment can be negative."
+        ),
+        "chatml.classify_heading": "Real model vs. lexicon: sentiment & toxicity",
+        "chatml.classify_caption": (
+            "Runs actual pretrained transformer models (not word lists) over a small "
+            "sample of messages — some already flagged as hostile by Chat "
+            "Intelligence's lexicon, some random — and compares their verdict to the "
+            "lexicon's. Loads ~1-2GB of model weights the first time (cached after "
+            "that); click to run. Shows the real channel and chatter — but neither "
+            "the model nor the lexicon is a certified classifier, so read a "
+            "\"toxic\"/\"hostile\" flag as a lead to check in context, not a verdict."
+        ),
+        "chatml.classify_button": "Run ML classification",
+        "chatml.classify_spinner": (
+            "Running sentiment and toxicity models (may download ~1-2GB the first "
+            "time)..."
+        ),
+        "chatml.no_classify": "No messages available to classify in the selected range.",
+        "chatml.classify_agreement": (
+            "The ML toxicity model and the lexicon heuristic agree on {pct}% of this "
+            "sample. Where they disagree is usually where context matters — see the "
+            "table below."
+        ),
+        "chatml.column.channel_short": "Channel",
+        "chatml.column.message": "Message",
+        "chatml.column.lexicon_verdict": "Lexicon says hostile",
+        "chatml.column.ml_sentiment": "ML sentiment",
+        "chatml.column.ml_toxicity": "ML toxicity",
+        "chatml.explain.classify": (
+            "Sentiment model: cardiffnlp/twitter-xlm-roberta-base-sentiment "
+            "(multilingual, trained on social-media text). Toxicity model: "
+            "textdetox/xlmr-large-toxicity-classifier — chosen after testing against "
+            "real chat: a smaller alternative confidently mislabeled \"gg les gars, "
+            "quel beau run\" (a friendly message) as 99% toxic and missed a real "
+            "insult entirely. A model can read context the lexicon can't — e.g. "
+            "recognizing \"ta gueule\" between friends as mostly playful rather than "
+            "hostile — which is exactly why comparing the two is worth doing rather "
+            "than trusting either alone."
+        ),
+        "chatml.classify_hint": (
+            "Click \"Run ML classification\" above to load the models and see a "
+            "comparison — not run automatically, since it can download ~1-2GB the "
+            "first time."
+        ),
+        "chatml.column.pca1": "Principal component 1",
+        "chatml.column.pca2": "Principal component 2",
+        "chatml.chart.streamers_pca": "Streamer segments, projected to 2D (PCA)",
+        "chatml.streamers_pca_caption": (
+            "Each dot is one streamer, colored by its behavioral cluster above — "
+            "the same 7-feature space the clustering was fit on, projected down to "
+            "the 2 directions of greatest variation so the segments can actually be "
+            "seen, not just tabulated. Distance on this plot roughly tracks how "
+            "similar two streamers' performance shape is, not their raw earnings. "
+            "Hover any point for that streamer's name and Twitch channel."
+        ),
+        "chatml.explain.streamers_pca": (
+            "Three steps turn the 7 raw features "
+            "(`amount_eur`, `hours_live`, `avg_viewers`, `peak_viewers`, "
+            "`unique_chatters`, `total_messages`, `uptime_pct`) into the 2 axes "
+            "plotted above — the same steps `cluster_streamers` itself fits on, "
+            "so this view matches the clusters exactly rather than being a "
+            "separately-chosen projection:\n\n"
+            "1. **Log-transform** each feature to tame its right skew "
+            "(`amount_eur` alone ranges from near-zero to over €2M): "
+            "$x' = \\log(1+x)$.\n"
+            "2. **Standardize** so no single feature's raw scale dominates: "
+            "$z = \\dfrac{x' - \\mu}{\\sigma}$, with mean $\\mu$ and standard "
+            "deviation $\\sigma$ computed per feature across all streamers.\n"
+            "3. **Project** each streamer's standardized 7-dimensional vector "
+            "$z$ onto the top 2 principal components $w_1, w_2$ — the 2 "
+            "directions of the 7-dimensional space (found via eigendecomposition "
+            "of $z$'s covariance matrix) that capture the most variance: "
+            "$\\mathrm{PC}_i = z \\cdot w_i$.\n\n"
+            "The two axes don't correspond to any single original feature — each "
+            "is a weighted mix of all seven — so read this plot for *relative* "
+            "position and clustering, not as literal donation or viewer values."
+        ),
+        "chatml.chart.chatters_pca": "Chatter segments, projected to 2D (PCA)",
+        "chatml.chatters_pca_caption": (
+            "Same idea as the streamer PCA plot above, over the chatter behavioral "
+            "feature space — each dot is one chatter, colored by cluster. Hover "
+            "any point for that chatter's name."
+        ),
+        "chatml.explain.chatters_pca": (
+            "Same log-transform → standardize → project pipeline as the streamer "
+            "PCA plot above (see its \"How to read this chart\" for the formulas), "
+            "run instead over the 6 chatter behavioral features "
+            "(`distinct_channel_count`, `total_message_count`, `lifespan_hours`, "
+            "`gap_coefficient_of_variation`, `avg_messages_per_channel`, "
+            "`top_channel_share`) that `cluster_chatters` itself fits on."
+        ),
+        "chatml.forecast_heading": "Donation forecasting from a mid-event snapshot",
+        "chatml.forecast_caption": (
+            "A Random Forest regressor trained to predict each streamer's "
+            "*eventual final* donation total from a snapshot of their own "
+            "cumulative donations, viewers and chat activity at an earlier "
+            "cutoff — genuinely forecasting an unknown future from a known past, "
+            "not predicting a number from itself. Move the slider to see how "
+            "forecast accuracy changes the earlier the snapshot is taken."
+        ),
+        "chatml.no_forecast": (
+            "Not enough streamers in the selected range/filter to fit and evaluate "
+            "a forecasting model yet."
+        ),
+        "chatml.forecast_cutoff": "Snapshot cutoff (fraction of the selected date range)",
+        "chatml.forecast_cutoff_caption": "Snapshot taken as of: {cutoff}",
+        "chatml.forecast_r2": "R² (test set)",
+        "chatml.forecast_mae": "MAE (test set)",
+        "chatml.forecast_n_test": "Streamers held out for testing",
+        "chatml.forecast_perfect_line": "Perfect prediction",
+        "chatml.forecast_scatter_name": "Streamer",
+        "chatml.chart.forecast_scatter": "Predicted vs. actual final donations (test set)",
+        "chatml.forecast_axis_actual": "Actual final donations (€)",
+        "chatml.forecast_axis_predicted": "Predicted final donations (€)",
+        "chatml.chart.forecast_importance": "What the model relies on most",
+        "chatml.forecast_feature_amount": "Donations so far",
+        "chatml.forecast_feature_avg_viewers": "Avg. viewers so far",
+        "chatml.forecast_feature_peak_viewers": "Peak viewers so far",
+        "chatml.forecast_feature_messages": "Chat messages so far",
+        "chatml.explain.forecast": (
+            "**Why this isn't circular.** Predicting a streamer's final total "
+            "from their *own final* stats (e.g. final viewers) would be "
+            "near-tautological — of course a number correlates with itself. "
+            "This instead snapshots every feature strictly *before* the cutoff "
+            "and only ever predicts what happens *after* it, the same "
+            "past-only-predicts-future constraint any real forecasting problem "
+            "needs.\n\n"
+            "**Why log-transformed.** Donations, viewers and message counts are "
+            "all heavily right-skewed (a few mega-fundraisers, a long tail of "
+            "small ones) — fitting on $x' = \\log(1+x)$ keeps the model from "
+            "being dominated by the biggest streamer alone, then predictions "
+            "are converted back to euros ($x = e^{x'} - 1$) before scoring, so "
+            "R²/MAE above are in the same units the chart shows.\n\n"
+            "**Reading the metrics**, for $n$ test streamers with actual final "
+            "totals $y_i$ and predicted totals $\\hat y_i$ (mean actual "
+            "$\\bar y$):\n"
+            "- $R^2 = 1 - \\dfrac{\\sum_i (y_i - \\hat y_i)^2}"
+            "{\\sum_i (y_i - \\bar y)^2}$ — close to 1.0 means the snapshot "
+            "explains almost all of the variation in final totals; 0 means it "
+            "explains no more than always guessing the average.\n"
+            "- $\\mathrm{MAE} = \\dfrac{1}{n}\\sum_i |y_i - \\hat y_i|$ — the "
+            "average prediction error, in euros.\n\n"
+            "Both are computed only on the held-out 25% test split — streamers "
+            "the model never saw while fitting — an honest estimate of forecast "
+            "error, not one inflated by testing on the training data itself."
+        ),
     },
     "fr": {
         # --- common ---
@@ -571,15 +1681,30 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "Affichage de **données d'exemple** — connectez une base de données "
             "(`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`) pour voir les vrais chiffres."
         ),
+        "common.footer": (
+            "ZEvent Dataviz v{version} — un tableau de bord non officiel pour le marathon "
+            "caritatif [ZEvent](https://zevent.fr), non affilié à l'événement ni à ses "
+            "organisateurs."
+        ),
         "common.no_data_in_range": "Aucune donnée dans la plage sélectionnée.",
         "common.view_data": "Voir les données sous-jacentes",
         "common.download_csv": "⬇️ Télécharger le CSV",
+        "common.prev_page": "⬅️ Précédent",
+        "common.next_page": "Suivant ➡️",
+        "common.page_of": "Page {page} sur {pages}",
+        "common.pie_other": "Autres",
         "common.how_to_read": "💡 Comment lire ce graphique",
-        "period.label": "Période",
-        "period.last_hour": "Dernière heure",
-        "period.last_6h": "Dernières 6h",
-        "period.last_24h": "Dernières 24h",
-        "period.all": "Tout l'événement",
+        "common.date_filter_caveat": (
+            "Cette section reflète l'événement entier, pas le filtre de dates de la barre "
+            "latérale — ces données sont pré-agrégées, sans horodatage par ligne."
+        ),
+        "common.entity_filter_caveat": (
+            "Cette section n'est pas non plus filtrée par les streamers/chatteurs sélectionnés "
+            "— ces données sont pré-agrégées, sans ventilation par chaîne/chatteur."
+        ),
+        "filter.date_range_label": "📅 Plage de dates",
+        "filter.streamer_label": "🎙️ Streamers",
+        "filter.chatter_label": "🗣️ Chatteurs",
         "common.per_hour": "{unit} / heure",
         "common.unit.messages": "messages",
         "common.unit.viewers": "viewers",
@@ -610,6 +1735,8 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "search.type.title": "Titre de stream",
         "search.type.emote": "Emote",
         "search.type.chatter": "Chatteur",
+        # --- nav ---
+        "nav.info_section": "Infos",
         # --- titres de page (utilisés dans l'en-tête de page et les cartes de l'accueil) ---
         "donations.title": "Dons",
         "streamers.title": "Streamers",
@@ -628,42 +1755,70 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "home.about_body": (
             "Cette application diffuse et analyse en direct les données de la dernière "
             "édition du ZEvent (**3-6 septembre 2026**) — un marathon caritatif de jeu "
-            "vidéo français où des streamers collectent des dons pour une cause. Elle "
-            "couvre quatre domaines de données directement depuis l'entrepôt, au fil de "
-            "l'événement : les **dons**, les **streamers**, le **chat en direct**, et les "
-            "**chatteurs**.\n\n"
-            "Elle est en lecture seule et se connecte à un entrepôt PostgreSQL partagé "
-            "(via PgBouncer) modélisé avec dbt à travers les schémas `raw` → `stg` → "
-            "`int` → `marts`, alimenté par deux pipelines indépendants : le site de dons/"
-            "objectifs du ZEvent lui-même, et les métadonnées de stream/chat de Twitch."
+            "vidéo français où des streamers collectent des dons pour une cause. Elle est "
+            "en lecture seule, mise à jour directement depuis l'entrepôt au fil de "
+            "l'événement."
         ),
+        "home.about_link": "Comment fonctionne ce tableau de bord, et d'où viennent ses données",
         "home.kpi_heading": "Aperçu de l'événement",
+        "home.kpi.total_raised": "Total collecté",
         "home.kpi.duration": "Durée de suivi des dons",
         "home.kpi.duration_value": "{hours} h",
         "home.kpi.streamers": "Streamers",
         "home.kpi.chatters": "Chatteurs",
         "home.kpi.messages": "Messages de chat",
         "home.kpi.peak_viewers": "Pic de viewers simultanés",
-        "home.pages_heading": "Pages",
-        "home.related_projects": (
-            "**Projets liés** — cette application fait partie d'un petit écosystème : "
-            "`zevent-analysis` (analyse hors-ligne plus poussée), `zevent-db` (l'entrepôt "
-            "que cette application lit), et `zevent-infra-monitoring` (supervision du "
-            "pipeline/de l'infrastructure). Ce tableau de bord est actuellement le seul "
-            "des quatre à avoir un livrable fonctionnel."
+        "home.daily_heading": "Tendance quotidienne",
+        "home.daily_caption": "Totaux de l'événement, regroupés par jour.",
+        "home.chart.daily": "Dons par jour",
+        "home.explain.daily": (
+            "Une barre par jour calendaire de l'événement — une vue plus large que les "
+            "graphiques horaires des autres pages, utile pour repérer le jour le plus généreux."
         ),
+        "home.pages_heading": "Pages",
         # --- donations ---
         "donations.description": (
             "Dons cumulés sur la durée de l'événement, évolution du rythme heure par "
             "heure, et mouvements du classement."
         ),
         "donations.no_data": "Aucune donnée de dons disponible pour le moment.",
-        "donations.filters": "Filtres",
         "donations.kpi.total_raised": "Total collecté",
         "donations.kpi.active_streamers": "Streamers actifs (dernière heure)",
         "donations.kpi.best_hour": "Meilleure heure",
+        "donations.podium_heading": "Meilleurs collecteurs",
+        "donations.podium_caption": "Les 3 streamers ayant collecté le plus jusqu'à présent.",
+        "donations.chart.podium": "Top 3 des dons collectés",
+        "donations.explain.podium": (
+            "Total des dons collectés par streamer, à l'échelle de l'événement (non "
+            "affecté par le filtre de dates de la barre latérale) — la hauteur des barres "
+            "est le montant réel, classé 1er/2e/3e."
+        ),
         "donations.chart.cumulative": "Dons cumulés",
         "donations.chart.pace": "Rythme des dons (par heure)",
+        "donations.donation_race_heading": "Classement des dons, heure par heure",
+        "donations.no_donation_race": "Aucun classement de dons par chaîne disponible pour le moment.",
+        "donations.donation_race_top_n": "Afficher le top N streamers",
+        "donations.donation_race_caption": (
+            "Les meilleurs streamers au global par dons cumulés, heure par heure — "
+            "l'historique complet de chaque streamer sur la période, pas seulement les "
+            "heures où il était en tête."
+        ),
+        "donations.chart.donation_race": "Meilleurs streamers par dons, dans le temps",
+        "donations.explain.donation_race": (
+            "Une ligne par streamer parmi le top N au global par dons cumulés ; survolez "
+            "un point pour son classement exact cette heure-là parmi tous les streamers. "
+            "Contrairement au total cumulé de l'événement ci-dessus, ceci "
+            "montre quels streamers précisément étaient en tête, et comment cela a évolué."
+        ),
+        "donations.spikes_heading": "Pics remarquables",
+        "donations.no_spikes": "Aucun don remarquable dans cette plage pour le moment.",
+        "donations.spikes_caption": (
+            "Les plus gros dons, avec ce qui était diffusé à l'écran à ce moment-là."
+        ),
+        "donations.explain.spikes": (
+            "Chaque ligne est un don anormalement élevé — son titre/catégorie et l'activité "
+            "du chat cette heure-là, pour comprendre ce qui a pu le déclencher."
+        ),
         "donations.phases_heading": "Phases de l'événement",
         "donations.chart.by_phase": "Dons par phase de l'événement",
         "donations.phases_caption": (
@@ -687,6 +1842,31 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "donations.explain.cumulative": (
             "Le total cumulé des dons de tous les streamers, depuis le début de "
             "l'événement jusqu'à maintenant. Toujours stable ou croissant — jamais à la baisse."
+        ),
+        "donations.editions_heading": "Cette édition vs. les précédentes",
+        "donations.editions_caption": (
+            "Dons cumulés alignés sur le nombre d'heures depuis le début de chaque édition, "
+            "pas sur la date calendaire, pour comparer les courbes directement. La courbe de "
+            "cet événement vient des données de cette appli ; les courbes des éditions "
+            "précédentes viennent de [EvenMoreStats](https://zevent.gdoc.fr) "
+            "(evenmorestats.fr), un tracker ZEvent tiers non officiel — pas de l'entrepôt de "
+            "données de cette appli."
+        ),
+        "donations.editions_unavailable": (
+            "La comparaison avec les éditions précédentes est temporairement indisponible — "
+            "impossible de joindre la source de données externe (EvenMoreStats)."
+        ),
+        "donations.chart.editions": "Dons cumulés par heures depuis le début",
+        "donations.hours_since_start": "heures depuis le début de l'événement",
+        "donations.editions_y_axis": "€ (échelle log)",
+        "donations.explain.editions": (
+            "La ligne verte pleine est cet événement ; les lignes grises (un style de "
+            "pointillés par année) sont les éditions précédentes, chacune démarrant son "
+            "propre chronomètre à l'heure 0 — une montée plus rapide en début d'événement ou "
+            "un dépassement de seuil plus précoce se voit directement quand une courbe en "
+            "dépasse une autre. L'axe des ordonnées est logarithmique (chaque graduation "
+            "correspond à x10) pour qu'une édition au total final bien plus élevé n'aplatisse "
+            "pas les autres courbes — y compris celle de cette année — en bas du graphique."
         ),
         "donations.explain.pace": (
             "Ce qui a été collecté durant chaque heure individuelle (pas cumulé). Les pics "
@@ -723,6 +1903,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "streamers.rank.donations": "Dons",
         "streamers.rank.engagement": "Engagement chat (messages)",
         "streamers.rank.audience": "Audience (viewers moyens)",
+        "streamers.rank.efficiency": "€ par viewer",
         "streamers.top_n": "Afficher le top N",
         "streamers.kpi.top": "Premier par {metric}",
         "streamers.kpi.total_raised": "Total collecté (affiché)",
@@ -731,18 +1912,59 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "streamers.correlation_heading": "Audience vs. engagement",
         "streamers.correlation_caption": (
             "Chaque point est un streamer — la taille de la bulle représente les dons "
-            "collectés. Utile pour repérer les cas atypiques (forte audience / peu de chat, ou l'inverse)."
+            "collectés, la couleur l'efficacité des dons (€ par viewer). Utile pour repérer "
+            "les cas atypiques (forte audience / peu de chat, ou l'inverse), et les "
+            "streamers dont l'audience convertit anormalement bien ou mal en dons pour "
+            "leur taille."
         ),
         "streamers.chart.correlation": "Viewers moyens vs. messages du chat",
+        "streamers.correlation_stat": (
+            "r de Pearson = {r} entre viewers moyens et messages du chat, sur les streamers "
+            "affichés (1 = relation linéaire parfaite, 0 = aucune relation linéaire, négatif = "
+            "l'un monte quand l'autre baisse). Ceci ne mesure qu'une association *linéaire*, et "
+            "association n'est pas causalité — un troisième facteur (ex. le créneau horaire) "
+            "peut influencer les deux."
+        ),
+        "streamers.correlation_stat_na": (
+            "Pas assez de streamers affichés (ou aucune variation sur un axe) pour calculer "
+            "une corrélation."
+        ),
+        "streamers.efficiency_axis": "€ / viewer",
         "streamers.profile_heading": "Profil du streamer",
-        "streamers.pick_streamer": "Choisir un streamer pour un profil détaillé",
+        "streamers.pick_streamer": "Choisir des streamers à comparer (4 max)",
+        "streamers.pick_at_least_one": "Choisissez au moins un streamer ci-dessus pour voir son profil.",
         "streamers.kpi.peak_viewers": "Pic de viewers",
         "streamers.kpi.uptime": "Temps de live",
         "streamers.kpi.top_category": "Catégorie principale",
         "streamers.kpi.unique_chatters": "Chatteurs uniques",
         "streamers.uptime_quirk": "100%+ (anomalie de données)",
+        "streamers.column.streamer": "Streamer",
+        "streamers.radar_caption": (
+            "Le rang percentile de ce streamer par rapport à tous les streamers de "
+            "l'événement, sur cinq métriques à la fois — la ligne pointillée marque le "
+            "50e percentile (le streamer médian) comme référence pour comparer la forme."
+        ),
+        "streamers.chart.radar": "Profil de {streamer} face au reste du champ",
+        "streamers.chart.radar_compare": "Profil des streamers sélectionnés face au reste du champ",
+        "streamers.radar.donations": "Dons",
+        "streamers.radar.audience": "Audience",
+        "streamers.radar.engagement": "Engagement",
+        "streamers.radar.efficiency": "€/viewer",
+        "streamers.radar.uptime": "Uptime",
+        "streamers.radar.median": "Streamer médian",
+        "streamers.explain.radar": (
+            "Chaque axe est un rang percentile (0-100) par rapport à tous les streamers, "
+            "pas une valeur brute — dons et nombres de viewers ne sont pas sur la même "
+            "échelle, donc des valeurs brutes sur un même radar n'auraient aucun sens ; "
+            "le percentile les met sur un pied d'égalité comparable. Une forme qui dépasse "
+            "la ligne médiane pointillée est un point fort de ce streamer ; un creux vers "
+            "l'intérieur est un point faible."
+        ),
         "streamers.chart.loyalty_mix": "Mix de fidélité des chatteurs de {streamer}",
-        "streamers.no_diurnal_data": "Aucun profil horaire de viewers disponible pour ce streamer.",
+        "streamers.chart.loyalty_mix_compare": "Mix de fidélité des chatteurs — streamers sélectionnés",
+        "streamers.no_diurnal_data": (
+            "Aucun profil horaire de viewers disponible pour le(s) streamer(s) sélectionné(s)."
+        ),
         "streamers.chart.diurnal": "Profil horaire de viewers vs. moyenne de l'événement",
         "streamers.hour_of_day": "heure de la journée (Europe/Paris)",
         "streamers.event_average": "Moyenne de l'événement",
@@ -752,37 +1974,114 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         ),
         "streamers.explain.correlation": (
             "Chaque point est un streamer : la position horizontale est les viewers "
-            "moyens, la verticale les messages du chat, et la taille de la bulle les dons "
-            "collectés. Un point isolé des autres mérite un coup d'œil — par exemple "
-            "beaucoup de viewers mais un chat silencieux."
+            "moyens, la verticale les messages du chat, la taille de la bulle les dons "
+            "collectés, et la couleur les dons par viewer (doré = plus efficace). Un point "
+            "isolé des autres mérite un coup d'œil — par exemple beaucoup de viewers mais "
+            "un chat silencieux, ou une petite bulle à la couleur vive (peu collecté au "
+            "total, mais efficace par viewer)."
         ),
         "streamers.explain.loyalty_mix": (
             "Combien des chatteurs de ce streamer ne discutent que chez lui (fidèles) "
             "contre ceux qui discutent aussi sur d'autres chaînes pendant l'événement "
             "(multi-streamer, semi-nomade, nomade)."
         ),
+        "streamers.top_chatters_heading": "Meilleurs chatteurs",
+        "streamers.top_chatters_caption_all": (
+            "Les chatteurs les plus actifs sur les {n} streamers, à l'échelle de "
+            "l'événement comme le reste de cette page, non affecté par le filtre de dates "
+            "de la barre latérale."
+        ),
+        "streamers.top_chatters_caption_filtered": (
+            "Les chatteurs les plus actifs sur les {n} streamers correspondant aux filtres "
+            "ci-dessus — à l'échelle de l'événement comme le reste de cette page, non "
+            "affecté par le filtre de dates de la barre latérale."
+        ),
+        "streamers.chart.top_chatters": "Top {n} chatteurs",
+        "streamers.explain.top_chatters": (
+            "Les messages de chaque chatteur cumulés uniquement sur les streamers "
+            "concernés ci-dessus (pas leur total sur tout l'événement) — survolez une "
+            "barre pour voir sur combien de ces chaînes ce chatteur a vraiment posté, car "
+            "un total élevé réparti sur plusieurs chaînes ne se lit pas comme le même "
+            "total venant d'une seule chaîne."
+        ),
         "streamers.explain.diurnal": (
-            "Viewers moyens par heure de la journée pour ce streamer (ligne pleine) vs. "
-            "la moyenne de l'événement (pointillés) — montre si les heures de pointe de ce "
-            "streamer correspondent à celles des autres, ou en diffèrent."
+            "Viewers moyens par heure de la journée pour chaque streamer sélectionné (ligne "
+            "pleine) vs. la moyenne de l'événement (pointillés) — montre si leurs heures de "
+            "pointe correspondent à celles des autres, ou en diffèrent."
+        ),
+        "streamers.night_shift_caption": (
+            "Euros de dons récoltés par viewer, par heure de la journée — les barres "
+            "atténuées marquent les heures de nuit."
+        ),
+        "streamers.night_shift_compare_note": (
+            "Affiché uniquement pour un seul streamer — la mise en avant des heures de nuit "
+            "ne se lit pas clairement une fois les barres de plusieurs streamers mélangées. "
+            "Réduisez votre sélection ci-dessus à un seul streamer pour le voir."
+        ),
+        "streamers.chart.night_shift": "Efficacité des dons par heure de la journée — {streamer}",
+        "streamers.night_shift_axis": "€ par viewer",
+        "streamers.explain.night_shift": (
+            "Certains streamers récoltent proportionnellement plus par viewer pendant la "
+            "nuit — une audience réduite mais fidèle et généreuse — même si l'audience "
+            "totale est plus faible à ce moment-là."
         ),
         # --- games ---
         "games.description": (
-            "Quelles catégories sont jouées, l'audience simultanée dans le temps, et les sessions récentes."
+            "Métadonnées des chaînes Twitch : quelles catégories étaient jouées et quand, "
+            "le classement horaire des viewers entre chaînes, l'impact des changements de "
+            "catégorie sur les viewers, et les sessions de stream récentes."
         ),
-        "games.filters": "Filtres",
         "games.kpi.concurrent_now": "Viewers simultanés actuels",
         "games.kpi.channels_now": "Chaînes en direct actuellement",
         "games.kpi.peak_concurrent": "Pic de viewers simultanés",
         "games.chart.viewership": "Audience simultanée de l'événement",
         "games.chart.live_channels": "Chaînes en direct dans le temps",
         "games.no_viewership": "Aucune donnée d'audience disponible pour le moment.",
+        "games.viewer_race_heading": "Classement des viewers, heure par heure",
+        "games.no_viewer_race": "Aucun classement de viewers par chaîne disponible pour le moment.",
+        "games.viewer_race_top_n": "Afficher le top N chaînes",
+        "games.viewer_race_caption": (
+            "Les meilleures chaînes au global par viewers moyens, heure par heure — "
+            "l'historique complet de chaque chaîne sur la période, pas seulement les "
+            "heures où elle était en tête."
+        ),
+        "games.chart.viewer_race": "Meilleures chaînes par viewers, dans le temps",
+        "games.explain.viewer_race": (
+            "Une ligne par chaîne parmi le top N au global par viewers moyens ; survolez "
+            "un point pour son classement exact cette heure-là parmi toutes les chaînes. "
+            "Contrairement au total d'audience de l'événement ci-dessus, ceci "
+            "montre quelles chaînes précises étaient en tête, et comment ça a évolué."
+        ),
         "games.categories_heading": "Catégories",
         "games.category_filter": "Filtrer les catégories",
         "games.chart.by_category": "Heures-chaîne par catégorie",
         "games.no_categories": "Aucune donnée de catégorie disponible pour le moment.",
+        "games.category_trend_heading": "Popularité des catégories dans le temps",
+        "games.no_category_trend": "Aucune donnée de catégorie heure par heure disponible pour le moment.",
+        "games.category_trend_caption": (
+            "Combien de chaînes jouaient à chaque catégorie, heure par heure — les 7 "
+            "catégories les plus jouées en heures-chaîne, plus « Autres » pour le reste."
+        ),
+        "games.chart.category_trend": "Chaînes jouant à chaque catégorie, dans le temps",
+        "games.explain.category_trend": (
+            "Une aire empilée par catégorie : la hauteur indique combien de chaînes y "
+            "jouaient cette heure-là. Utile pour repérer une catégorie qui décolle à un "
+            "moment précis (ex. tout le monde bascule sur le même jeu pour un défi), ce "
+            "que la barre des totaux ci-dessus ne peut pas montrer."
+        ),
         "games.sessions_heading": "Sessions de stream récentes",
         "games.no_sessions": "Aucune session de stream enregistrée pour le moment.",
+        "games.sessions_caption": (
+            "Pic de viewers par session, coloré selon que l'audience a augmenté (vert) ou "
+            "diminué (rouge) depuis le début de la session — le tableau complet est dans "
+            "le menu déroulant ci-dessous."
+        ),
+        "games.chart.sessions": "Pic de viewers par session",
+        "games.explain.sessions": (
+            "Une barre par session de stream récente — la hauteur est le pic de viewers "
+            "atteint pendant celle-ci, la couleur indique si l'audience était plus haute "
+            "ou plus basse qu'au début de la session."
+        ),
         "games.titles_heading": "Classement des titres de stream",
         "games.no_titles": "Aucune donnée de titre de stream disponible pour le moment.",
         "games.titles_caption": (
@@ -804,6 +2103,21 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "games.explain.by_category": (
             "Total d'heures-chaîne passées sur chaque catégorie — une catégorie jouée par "
             "de nombreuses chaînes brièvement peut dépasser une jouée par peu de chaînes longtemps."
+        ),
+        "games.switches_heading": "Changements de catégorie",
+        "games.no_switches": "Aucun changement de catégorie dans cette plage pour le moment.",
+        "games.switches_caption": (
+            "Changements classés par l'ampleur du mouvement de viewers qui a suivi."
+        ),
+        "games.chart.switches": "Plus gros mouvements de viewers après un changement de catégorie",
+        "games.switches_axis": "Variation de viewers (heure suivante)",
+        "games.explain.switches": (
+            "Vert signifie que les viewers ont augmenté dans l'heure suivant le changement "
+            "de catégorie, rouge qu'ils ont chuté — classé par l'ampleur du mouvement. Ceci "
+            "montre ce qui s'est passé *après* le changement, pas la preuve que le changement "
+            "en est la *cause* — un creux naturel jour/nuit, le streamer qui vient de se "
+            "connecter, ou la propre variation d'une autre chaîne peuvent tout autant "
+            "expliquer le chiffre."
         ),
         "games.explain.titles": (
             "Titres de stream classés par messages ou par dons (au choix ci-dessus) — une "
@@ -852,16 +2166,43 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "logarithmique pour que les montants réalistes et blagueurs tiennent sur un "
             "même axe. La ligne pointillée marque le seuil choisi ci-dessus."
         ),
+        "goals.ambition_heading": "Ambition vs. réalité",
+        "goals.no_ambition": "Aucune donnée de couverture d'objectifs disponible pour le moment.",
+        "goals.ambition_caption": (
+            "Les streamers dont les objectifs de dons sont, pour l'instant, les plus hors "
+            "de portée — logique, vu à quel point les montants d'objectifs sont souvent exagérés."
+        ),
+        "goals.chart.ambition": "Objectifs de dons les moins couverts",
+        "goals.ambition_axis": "% du total de l'objectif collecté",
+        "goals.explain.ambition": (
+            "Le total collecté en pourcentage de la somme des objectifs du streamer — un "
+            "chiffre bas ici signifie autant « objectif blague » qu'« objectif ambitieux »."
+        ),
         # --- chat ---
         "chat.description": (
             "Volume de messages dans le temps, les chaînes les plus actives, et les emotes les plus utilisées."
         ),
         "chat.no_data": "Aucune donnée de chat disponible pour le moment.",
-        "chat.filters": "Filtres",
         "chat.kpi.messages_this_hour": "Messages cette heure",
         "chat.kpi.chatters_this_hour": "Chatteurs uniques cette heure",
         "chat.kpi.total_messages": "Total messages (événement)",
         "chat.chart.activity": "Messages du chat par heure (toutes chaînes)",
+        "chat.message_race_heading": "Classement des messages, heure par heure",
+        "chat.no_message_race": "Aucun classement de messages par chaîne disponible pour le moment.",
+        "chat.message_race_top_n": "Afficher le top N chaînes",
+        "chat.message_race_caption": (
+            "Les meilleures chaînes au global par messages de chat, heure par heure — "
+            "l'historique complet de chaque chaîne sur la période, pas seulement les "
+            "heures où elle était en tête."
+        ),
+        "chat.chart.message_race": "Meilleures chaînes par messages, dans le temps",
+        "chat.explain.message_race": (
+            "Une ligne par chaîne parmi le top N au global par nombre de messages ; "
+            "survolez un point pour son classement exact cette heure-là parmi toutes les "
+            "chaînes. Contrairement au volume de messages de l'événement "
+            "ci-dessus, ceci montre quelles chaînes précisément étaient les plus actives, "
+            "et comment cela a évolué."
+        ),
         "chat.engagement_heading": "Taux d'engagement du chat",
         "chat.engagement_caption": (
             "Messages par minute pour 100 viewers — un indicateur d'engouement/engagement "
@@ -875,7 +2216,10 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "chat.heatmap_heading": "Carte de chaleur de l'activité",
         "chat.no_heatmap": "Aucune donnée de chat par chaîne disponible pour le moment.",
         "chat.channel_filter": "Filtrer les chaînes",
-        "chat.heatmap_caption": "Plus foncé = plus de messages sur cette chaîne, à cette heure.",
+        "chat.heatmap_caption": (
+            "Un vert plus vif = plus de messages sur cette chaîne, à cette heure ; une "
+            "cellule vide signifie que la chaîne n'était simplement pas active cette heure-là."
+        ),
         "chat.chart.heatmap": "Messages par chaîne et par heure",
         "chat.channels_heading": "Chaînes les plus actives",
         "chat.no_channels": "Aucune donnée de chat par chaîne disponible pour le moment.",
@@ -903,18 +2247,104 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "très actif ne soit pas éclipsée par le volume brut d'une grande chaîne."
         ),
         "chat.explain.heatmap": (
-            "Une cellule par chaîne x heure ; plus foncé signifie plus de messages. Utile "
-            "pour repérer d'un coup d'œil quelles chaînes étaient actives à quel moment."
+            "Une cellule par chaîne x heure ; plus c'est vif, plus il y a de messages, et "
+            "une cellule vide signifie qu'il n'y a eu aucune activité enregistrée sur cette "
+            "chaîne cette heure-là. Utile pour repérer d'un coup d'œil quelles chaînes "
+            "étaient actives à quel moment."
+        ),
+        "chat.spikes_heading": "Pics de chat",
+        "chat.no_spikes": "Aucun moment de chat remarquable dans cette plage pour le moment.",
+        "chat.spikes_caption": (
+            "Les heures où le volume de messages d'une chaîne s'est le plus écarté de sa "
+            "propre moyenne."
+        ),
+        "chat.chart.spikes": "Plus grosses anomalies de volume de messages",
+        "chat.spikes_axis": "Écarts-types par rapport à la moyenne de la chaîne",
+        "chat.explain.spikes": (
+            "Chaque barre est une heure pour une chaîne, notée par rapport à sa propre "
+            "moyenne et sa dispersion — une heure ordinaire pour une chaîne habituellement "
+            "calme ne dépasse donc pas un moment vraiment inhabituel pour une chaîne plus "
+            "active. Rouge/orange marquent les plus extrêmes."
         ),
         "chat.explain.composition": (
             "Les messages de chaque chaîne répartis selon qui les a envoyés (abonné, VIP, "
             "modérateur, viewer simple) — une forte part d'abonnés/modérateurs suggère une "
             "communauté établie, pas seulement du volume brut."
         ),
+        "chat.verbosity_heading": "Longueur des messages par chaîne",
+        "chat.verbosity_caption": (
+            "La longueur type d'un message sur chaque chaîne, en caractères — un chat peut "
+            "être à fort volume mais peu élaboré (messages courts, spam d'emotes), ou à "
+            "volume plus faible mais plus substantiel."
+        ),
+        "chat.chart.verbosity": "Longueur moyenne des messages par chaîne",
+        "chat.verbosity_axis": "caractères / message",
+        "chat.explain.verbosity": (
+            "Nombre moyen de caractères par message sur cette chaîne, sur tout l'événement "
+            "— un indicateur approximatif de profondeur du chat, pas de sentiment ni de "
+            "qualité."
+        ),
         "chat.explain.emotes": (
             "Les emotes les plus utilisées de l'événement, par nombre d'utilisations. Les "
             "emotes absentes du catalogue sont affichées avec un identifiant raccourci "
             "plutôt que leur vrai nom (voir la note au-dessus du graphique, le cas échéant)."
+        ),
+        "chat.emote_search_heading": "Rechercher par emote",
+        "chat.emote_search_caption": (
+            "Trouvez tous les messages de chat utilisant une emote précise — qui l'a "
+            "envoyée, et depuis quelle chaîne."
+        ),
+        "chat.emote_search_label": 'Code de l\'emote (ex. "Kappa", "LUL")',
+        "chat.emote_search_no_matches": "Aucune emote ne correspond à cette recherche.",
+        "chat.emote_search_pick": "Laquelle ?",
+        "chat.emote_search_no_usage": "Cette emote n'a pas été utilisée dans la plage de dates sélectionnée.",
+        "chat.emote_search_results_caption": "{count} messages, les plus récents en premier (limité à 200).",
+        "chat.breakdown_heading": "Répartition des messages",
+        "chat.breakdown_caption": (
+            "Découpez les messages de l'événement par chaîne, chatteur, moment de la "
+            "journée, ou emote."
+        ),
+        "chat.breakdown_dimension": "Répartir par",
+        "chat.breakdown.by_channel": "Chaîne",
+        "chat.breakdown.by_chatter": "Chatteur",
+        "chat.breakdown.by_time": "Moment de la journée",
+        "chat.breakdown.by_emote": "Emote",
+        "chat.chart.breakdown_channel": "Messages par chaîne",
+        "chat.chart.breakdown_chatter": "Messages par chatteur",
+        "chat.chart.breakdown_time": "Messages par moment de la journée",
+        "chat.chart.breakdown_emote": "Messages par emote",
+        "chat.explain.breakdown": (
+            "Les 7 plus grosses parts par nombre de messages, plus une seule part "
+            "« Autres » pour la traîne — un camembert avec plus de catégories que ça "
+            "devient illisible. « Moment de la journée » regroupe chaque message dans "
+            "une tranche de 6 heures en heure locale Europe/Paris, quel que soit le "
+            "jour de l'événement."
+        ),
+        "chat.daypart.morning": "Matin (6h-12h)",
+        "chat.daypart.afternoon": "Après-midi (12h-18h)",
+        "chat.daypart.evening": "Soirée (18h-0h)",
+        "chat.daypart.night": "Nuit (0h-6h)",
+        "chat.drilldown_heading": "Chatteur ↔ chaîne, en détail",
+        "chat.drilldown_caption": (
+            "Choisissez un chatteur pour voir ses messages répartis par chaîne, ou une "
+            "chaîne pour voir ses messages répartis par chatteur — la même relation, "
+            "lue dans chaque sens."
+        ),
+        "chat.drilldown_chatter_heading": "Un chatteur, par chaîne",
+        "chat.drilldown_pick_chatter": "Choisir un chatteur",
+        "chat.drilldown_channel_heading": "Une chaîne, par chatteur (inverse)",
+        "chat.drilldown_pick_channel": "Choisir une chaîne",
+        "chat.chart.drilldown_chatter": "Messages de {chatter} par chaîne",
+        "chat.chart.drilldown_channel": "Messages de {channel} par chatteur",
+        "chat.explain.drilldown": (
+            "À gauche : les messages d'un chatteur, répartis sur chaque chaîne où il a "
+            "discuté. À droite : l'inverse — les meilleurs chatteurs d'une chaîne. Le "
+            "côté chaîne est approximatif : le classement des chatteurs ne suit qu'une "
+            "chaîne (principale) par chatteur, pas toute son activité par chaîne — un "
+            "chatteur surtout actif ailleurs mais occasionnellement présent sur cette "
+            "chaîne peut donc ne pas apparaître. Seules les chaînes ayant au moins un "
+            "chatteur dans le classement sont proposées, pour ne jamais tomber sur un "
+            "choix forcément vide."
         ),
         # --- community ---
         "community.description": (
@@ -931,8 +2361,12 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "community.hourly_network_heading": "Communauté de chatteurs, heure par heure",
         "community.hourly_network_caption": (
             "Chaque lien signifie que deux chaînes partagent des chatteurs cette heure-là — "
-            "plus épais/foncé signifie plus de chatteurs partagés. Choisissez une heure pour "
-            "voir l'évolution du réseau communautaire."
+            "plus épais/foncé signifie plus de chatteurs partagés, et la couleur des nœuds "
+            "est une communauté détectée (les chaînes dont les audiences se chevauchent le "
+            "plus tendent à se regrouper, pas une couleur arbitraire par chaîne). "
+            "Choisissez une heure pour voir l'évolution de la structure communautaire ; il "
+            "s'ouvre sur la dernière heure avec des données calculées, car l'heure la plus "
+            "récente d'un événement en direct peut brièvement accuser un léger retard."
         ),
         "community.hour_picker": "Heure",
         "community.no_hourly_network": "Aucune donnée de réseau horaire disponible pour le moment.",
@@ -964,18 +2398,74 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "community.network_caption": (
             "Chaque paire de chaînes qui partage des chatteurs, sous forme de graphe "
             "réseau — plus les liens sont épais/foncés, plus de chatteurs sont partagés, "
-            "et chaque chaîne garde sa propre couleur fixe, comme le graphe heure par heure ci-dessus."
+            "et la couleur des nœuds est une communauté détectée, comme le graphe heure "
+            "par heure ci-dessus. Seuls les plus gros hubs gardent une étiquette "
+            "permanente ; survolez un nœud pour son nom."
         ),
         "community.chart.network": "Réseau d'audiences partagées",
+        "community.network_min_weight": "Nombre minimum de chatteurs partagés pour afficher un lien",
+        "community.network_filtered_caption": (
+            "Affichage de {edges} liens sur {total_edges} ({nodes} chaînes sur {total_nodes}) "
+            "— augmentez le curseur pour plus de clarté, baissez-le pour voir la longue traîne."
+        ),
+        "community.weight_picker": "Pondérer les liens par",
+        "community.weight.shared_count": "Chatteurs partagés (nombre brut)",
+        "community.weight.jaccard": "Indice de Jaccard (recouvrement normalisé)",
+        "community.weight.jaccard_caveat": (
+            "Indice de Jaccard = chatteurs partagés ÷ chatteurs présents sur *l'une ou "
+            "l'autre* chaîne — deux petites chaînes qui partagent l'essentiel de leur "
+            "(petite) audience peuvent dépasser deux énormes chaînes avec plus de "
+            "chatteurs partagés en valeur absolue mais un recouvrement plus faible "
+            "relativement à leur taille. Le nombre brut favorise les grandes chaînes ; "
+            "ceci favorise les chaînes très liées, quelle que soit leur taille."
+        ),
+        "community.weight.shared_count_hover_label": "chatteurs partagés",
+        "community.weight.jaccard_hover_label": "recouvrement Jaccard",
         "community.explain.growth": (
             "Le nombre cumulé de chatteurs distincts vus jusqu'à présent, dans le temps — "
             "toujours stable ou croissant."
         ),
+        "community.retention_heading": "Rétention des chatteurs, jour par jour",
+        "community.no_retention": "Pas encore assez de jours de données pour mesurer la rétention.",
+        "community.retention_caption": (
+            "Parmi les chatteurs actifs le tout premier jour de l'événement, combien sont "
+            "revenus chaque jour suivant — sur tout l'événement, indépendamment du filtre "
+            "de date de la barre latérale."
+        ),
+        "community.retention_day_label": "Jour {day}",
+        "community.chart.retention": "Chatteurs du jour 0 encore actifs, par jour",
+        "community.retention_live_caveat": (
+            "⚠️ Si l'événement est encore en direct, le jour le plus récent affiché est "
+            "encore en cours — son chiffre est un minimum, pas un décompte final."
+        ),
+        "community.explain.retention": (
+            "Le « jour » est compté depuis le début de l'événement lui-même (son premier "
+            "message), pas l'horloge du calendrier — le jour 0 est les 24 premières "
+            "heures pleines, le jour 1 les suivantes, etc. Le pourcentage est la part des "
+            "chatteurs du jour 0 encore actifs ce jour-là ; un chatteur parti puis revenu "
+            "plus tard compte quand même."
+        ),
+        "community.new_by_channel_heading": "Nouveaux chatteurs par chaîne",
+        "community.no_new_by_channel": "Aucune donnée de nouveaux chatteurs dans cette plage pour le moment.",
+        "community.new_by_channel_caption": (
+            "Top {shown} chaînes sur {total}, par nouveaux chatteurs attirés."
+        ),
+        "community.chart.new_by_channel": "Nouveaux chatteurs par chaîne",
+        "community.explain.new_by_channel": (
+            "Un chatteur compte comme « nouveau pour cette chaîne » la première fois qu'il "
+            "y écrit — même un chatteur fidèle ailleurs dans l'événement compte comme "
+            "nouveau ici."
+        ),
         "community.explain.hourly_network": (
             "Un nœud par chaîne, un lien par paire de chaînes ayant partagé des chatteurs "
             "cette heure-là — plus le lien est épais/foncé, plus de chatteurs sont "
-            "partagés. Chaque nœud a sa propre couleur fixe, pour repérer facilement une "
-            "même chaîne d'une heure à l'autre."
+            "partagés. Les nœuds sont colorés par communauté détectée (regroupement par "
+            "modularité : quelles chaînes ont des audiences qui se chevauchent plus entre "
+            "elles qu'avec le reste) et positionnés près de leur propre cluster, pour que "
+            "la structure soit visible d'un coup d'œil plutôt qu'un enchevêtrement "
+            "aléatoire. La taille du nœud suit l'audience partagée totale (degré pondéré) ; "
+            "seuls les plus gros hubs gardent une étiquette permanente — survolez un nœud "
+            "pour son nom, ou un lien pour le nombre exact de chatteurs partagés."
         ),
         "community.explain.loyalty_mix": (
             "Combien de chatteurs ne discutent que dans une seule chaîne (fidèles) contre "
@@ -995,9 +2485,25 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         ),
         "community.explain.network": (
             "Un nœud par chaîne, dont la taille reflète avec combien d'autres chaînes elle "
-            "partage une audience ; un lien par paire de chaînes, plus épais/foncé pour "
-            "plus de chatteurs partagés. À l'échelle de l'événement, contrairement au "
-            "graphe heure par heure ci-dessus."
+            "partage une audience, coloré par communauté détectée et positionné près de "
+            "son cluster ; un lien par paire de chaînes, plus épais/foncé pour plus de "
+            "chatteurs partagés. À l'échelle de l'événement, contrairement au graphe heure "
+            "par heure ci-dessus. Survolez un nœud pour son nom et son degré, ou un lien "
+            "pour le nombre exact de chatteurs partagés."
+        ),
+        "community.migrations_heading": "Passages entre chaînes",
+        "community.no_migrations": "Aucune donnée de passages entre chaînes disponible pour le moment.",
+        "community.migrations_caption": (
+            "À quelle fréquence les chatteurs passent directement d'une chaîne à une autre."
+        ),
+        "community.chart.migrations": "Migrations de chatteurs entre chaînes",
+        "community.explain.migrations": (
+            "Un diagramme de flux, pas un graphe de réseau : les migrations sont dirigées "
+            "(et une paire de chaînes a souvent des passages dans les deux sens), donc "
+            "chaque chaîne apparaît une fois à gauche comme origine et une fois à droite "
+            "comme destination. La largeur du ruban suit le nombre de chatteurs ayant fait "
+            "ce passage précis — survolez un ruban pour le nombre exact. À l'échelle de "
+            "l'événement, non affecté par le filtre de dates de la barre latérale."
         ),
         # --- tracker ---
         "tracker.description": (
@@ -1014,6 +2520,16 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "tracker.per_streamer_heading": "Par streamer",
         "tracker.no_streamers": "Aucune donnée de streamer disponible pour le moment.",
         "tracker.pick_streamer": "Choisir un streamer",
+        "tracker.pick_streamer_single": (
+            "Affichage de **{streamer}** — filtré par le filtre streamer de la barre latérale."
+        ),
+        "tracker.category_filter": "Catégorie d'objectif",
+        "tracker.category_filter_help": (
+            "Chaque catégorie est suivie comme sa propre chaîne indépendante de "
+            "début/fin — en mélanger plusieurs sur la chronologie ci-dessous peut "
+            "montrer des périodes d'objectifs sans rapport qui se chevauchent, donc "
+            "réduisez à une seule pour une lecture claire."
+        ),
         "tracker.no_goals": "Aucun objectif de don suivable pour ce streamer pour le moment.",
         "tracker.kpi.total": "Objectifs suivis",
         "tracker.kpi.done": "Atteints",
@@ -1038,6 +2554,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "tracker.duration_axis": "heures",
         "tracker.table_heading": "Tous les objectifs",
         "tracker.table_caption": "Chaque objectif, avec la durée exacte en heures et en secondes.",
+        "tracker.column.category": "Catégorie",
         "tracker.column.goal": "Objectif",
         "tracker.column.amount": "Montant",
         "tracker.column.status": "Statut",
@@ -1095,8 +2612,35 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "chaînes fréquentées, la verticale le total des messages, coloré par profil de fidélité."
         ),
         "chatters.chart.correlation": "Chaînes fréquentées vs. total des messages",
+        "chatters.correlation_stat": (
+            "r de Pearson = {r} entre chaînes fréquentées et total des messages, sur les "
+            "chatteurs affichés (1 = relation linéaire parfaite, 0 = aucune relation linéaire). "
+            "Association linéaire uniquement — cela n'implique pas de causalité."
+        ),
+        "chatters.correlation_stat_na": (
+            "Pas assez de chatteurs affichés (ou aucune variation sur un axe) pour calculer "
+            "une corrélation."
+        ),
+        "chatters.lifespan_heading": "Combien de temps les chatteurs restent",
+        "chatters.lifespan_caption": (
+            "Temps entre le premier et le dernier message d'un chatteur — un indicateur "
+            "d'engagement, pas seulement de volume posté."
+        ),
+        "chatters.chart.lifespan": "Chatteurs par durée d'engagement",
+        "chatters.lifespan.single_message": "Message unique",
+        "chatters.lifespan.under_1h": "< 1 heure",
+        "chatters.lifespan.1_to_6h": "1 - 6 heures",
+        "chatters.lifespan.6_to_24h": "6 - 24 heures",
+        "chatters.lifespan.24h_plus": "24+ heures",
+        "chatters.explain.lifespan": (
+            "« Message unique » signifie que le premier et le dernier message sont le "
+            "même — typiquement un chatteur de passage, pas forcément un bot (voir "
+            "l'heuristique bot ci-dessus pour ça). Les barres de droite sont les chatteurs "
+            "revenus sur plusieurs heures, parfois tout l'événement."
+        ),
         "chatters.profile_heading": "Profil du chatteur",
         "chatters.pick_chatter": "Choisir un chatteur pour un profil détaillé",
+        "chatters.kpi.global_total": "Total des messages (toutes chaînes)",
         "chatters.kpi.channels": "Chaînes fréquentées",
         "chatters.kpi.top_channel_share": "Part des messages sur la chaîne principale",
         "chatters.kpi.account_age": "Âge du compte",
@@ -1107,6 +2651,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "probabilité de bot."
         ),
         "chatters.no_channel_data": "Aucune activité par chaîne disponible pour ce chatteur.",
+        "chatters.chart.global_bar_label": "Global (toutes chaînes)",
         "chatters.chart.channel_breakdown": "Messages de {chatter} par chaîne",
         "chatters.explain.channel_breakdown": (
             "Comment les messages de ce chatteur se répartissent entre les chaînes qu'il fréquente."
@@ -1117,6 +2662,168 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "et le nom d'utilisateur par un pseudonyme à sens unique, pour qu'un fichier "
             "téléchargé ne puisse jamais être retracé jusqu'à une personne réelle."
         ),
+        "chatters.by_channel_heading": "Chatteurs d'une chaîne",
+        "chatters.by_channel_caption": (
+            "Choisissez une chaîne pour voir tous ceux qui y ont discuté — type de badge "
+            "(abonné/VIP/modérateur/viewer simple), nombre de messages, première/dernière "
+            "activité, et utilisation d'emotes."
+        ),
+        "chatters.pick_channel": "Choisir une chaîne",
+        "chatters.badge_filter": "Filtrer par badge",
+        "chatters.kpi.moderators": "Modérateurs",
+        "chatters.kpi.subscribers": "Abonnés",
+        "chatters.chart.badge_mix": "Messages de {channel} par badge de chatteur",
+        "chatters.explain.badge_mix": (
+            "Chaque chatteur compte pour exactement un niveau de badge ici (modérateur/"
+            "diffuseur > VIP > abonné > viewer simple — l'ordre d'affichage de Twitch "
+            "lui-même), selon les badges attachés à ses messages sur cette chaîne, donc les "
+            "niveaux ne se chevauchent jamais."
+        ),
+        "chatters.rank.emotes": "Utilisations d'emotes",
+        "chatters.chart.channel_ranked": "Chatteurs de {channel} par {metric}",
+        "chatters.explain.channel_ranked": (
+            "Le top N des chatteurs de cette chaîne, classés selon la métrique choisie "
+            "ci-dessus — total des messages, ou total des utilisations d'emotes (cumulé "
+            "sur chaque emote de chaque message, pas seulement les emotes distinctes)."
+        ),
+        "chatters.by_channel_table_caption": (
+            "Une ligne par chatteur, avec ses messages par niveau de badge, sa première/"
+            "dernière heure de message, et son utilisation totale d'emotes sur cette chaîne."
+        ),
+        # --- messages ---
+        "messages.title": "Messages du chat",
+        "messages.description": (
+            "Rechercher et parcourir les messages individuels du chat par date, streamer "
+            "et chatteur."
+        ),
+        "messages.no_data": "Aucune donnée de chat disponible pour le moment.",
+        "messages.filters": "Filtres",
+        "messages.channel_filter": "Streamer",
+        "messages.all_channels": "Tous les streamers",
+        "messages.chatter_search": "Le chatteur contient",
+        "messages.text_search": "Le message contient",
+        "messages.limit_label": "Résultats max",
+        "messages.limit_caveat": (
+            "Affichage des {limit} messages correspondants les plus récents — affinez les "
+            "filtres pour remonter plus loin."
+        ),
+        "messages.kpi.shown": "Messages affichés",
+        "messages.kpi.channels": "Streamers",
+        "messages.kpi.chatters": "Chatteurs",
+        "messages.time_heading": "Quand ces messages ont eu lieu",
+        "messages.time_caption": (
+            "Nombre de messages par heure parmi ceux actuellement affichés ci-dessus (après "
+            "filtres et limite de résultats) — pas le graphique d'activité globale de la "
+            "page Chat en direct."
+        ),
+        "messages.chart.time": "Messages affichés, dans le temps",
+        "messages.explain.time": (
+            "Regroupé par heure. Si le nombre de résultats a atteint la limite maximale, "
+            "ceci ne couvre que les messages correspondants les plus récents, pas toutes "
+            "les correspondances de la période sélectionnée — affinez les filtres pour "
+            "remonter plus loin."
+        ),
+        "messages.breakdown_heading": "Qui et où",
+        "messages.breakdown_caption": (
+            "Streamers et chatteurs les plus présents parmi les messages actuellement "
+            "affichés — même réserve sur la troncature par la limite que le graphique "
+            "ci-dessus."
+        ),
+        "messages.chart.top_channels": "Top streamers, par messages affichés",
+        "messages.chart.top_chatters": "Top chatteurs, par messages affichés",
+        "messages.explain.breakdown": (
+            "Les streamers et chatteurs les plus actifs au sein des résultats de recherche "
+            "actuels, pas à l'échelle de l'événement — par exemple, rechercher un mot "
+            "précis montre qui le dit le plus, pas qui chatte le plus au global."
+        ),
+        "messages.table_heading": "Messages",
+        "messages.table_caption": "Messages correspondants les plus récents en premier.",
+        "messages.column.datetime": "Envoyé à",
+        "messages.column.streamer": "Streamer",
+        "messages.column.chatter": "Chatteur",
+        "messages.column.message": "Message",
+        "messages.column.badge": "Badge",
+        "messages.chart.badge_mix": "Messages affichés, par badge du chatteur",
+        "messages.explain.badge_mix": (
+            "Comment les messages actuellement affichés se répartissent entre les badges "
+            "modérateur, VIP, abonné et spectateur simple."
+        ),
+        # --- leaderboard ---
+        "leaderboard.title": "Classement",
+        "leaderboard.description": (
+            "Qui est en tête, au même endroit — meilleurs streamers par dons et audience, "
+            "meilleurs chatteurs, et le #1 fan de chaque streamer. Classement sur tout "
+            "l'événement, pas une fenêtre glissante."
+        ),
+        "leaderboard.no_data": "Aucune donnée de streamer disponible pour le moment.",
+        "leaderboard.top_n": "Afficher le top N",
+        "leaderboard.column.rank": "Rang",
+        "leaderboard.column.streamer": "Streamer",
+        "leaderboard.column.amount": "Montant",
+        "leaderboard.column.chatter": "Chatteur",
+        "leaderboard.column.top_fan": "Top fan",
+        "leaderboard.column.messages": "Messages",
+        "leaderboard.donations_heading": "Meilleurs streamers par dons",
+        "leaderboard.donations_caption": (
+            "Totaux sur tout l'événement — les mêmes chiffres que le podium de la page Dons "
+            "et le classement par dons de la page Streamers, réunis ici."
+        ),
+        "leaderboard.chart.donations_podium": "Top 3 par dons collectés",
+        "leaderboard.explain.donations": (
+            "Classé par total de dons collectés, sur tout l'événement, indépendamment du "
+            "filtre de date de la barre latérale."
+        ),
+        "leaderboard.chatters_heading": "Meilleurs chatteurs, sur tout l'événement",
+        "leaderboard.chatters_caption": (
+            "Les chatteurs les plus actifs sur l'ensemble de l'événement — mêmes chiffres "
+            "que le classement de la page Chatteurs, réunis ici."
+        ),
+        "leaderboard.chart.chatters_podium": "Top 3 par messages envoyés",
+        "leaderboard.explain.chatters": (
+            "Classé par total de messages envoyés, sur tout l'événement, toutes chaînes "
+            "confondues pour chaque chatteur."
+        ),
+        "leaderboard.fans_heading": "Top fan, par streamer",
+        "leaderboard.fans_caption": (
+            "Pour chaque streamer, le chatteur ayant posté le plus de messages sur sa "
+            "chaîne — introuvable ailleurs dans l'application. Recherchez un streamer par "
+            "nom pour le retrouver."
+        ),
+        "leaderboard.fans_search": "Rechercher par nom de streamer",
+        "leaderboard.explain.fans": (
+            "Une ligne par streamer : son chatteur le plus actif et le nombre de messages "
+            "envoyés là-bas. Le #1 fan d'un streamer n'a pas besoin d'être un chatteur classé "
+            "en tête à l'échelle de l'événement — le viewer le plus actif d'un petit streamer "
+            "peut très bien dominer ici tout en étant presque invisible ailleurs."
+        ),
+        "leaderboard.audience_heading": "Meilleurs streamers par audience et efficacité",
+        "leaderboard.audience_caption": (
+            "Les deux premières métriques reprennent le classement de la page Streamers "
+            "(hors dons, couverts ci-dessus) ; les trois métriques d'efficacité sont "
+            "nouvelles — des dénominateurs différents (par viewer, par chatteur, par "
+            "heure) racontent des histoires différentes sur la conversion d'un stream en "
+            "dons. Choisissez-en une pour voir qui est en tête."
+        ),
+        "leaderboard.metric_picker": "Classer par",
+        "leaderboard.metric.viewers": "Audience (viewers moyens)",
+        "leaderboard.metric.engagement": "Engagement du chat (messages)",
+        "leaderboard.metric.efficiency": "€ par viewer",
+        "leaderboard.metric.efficiency_chatters": "€ par chatteur unique",
+        "leaderboard.metric.rate": "€ par heure streamée",
+        "leaderboard.rate_caveat": (
+            "⚠️ Un streamer resté en direct seulement quelques heures peut afficher un taux "
+            "extrême à cause d'un seul gros don — c'est un ratio réel, pas un bug, mais un "
+            "`hours_live` très court doit inciter à regarder de plus près, pas être pris "
+            "comme preuve d'un rythme soutenu."
+        ),
+        "leaderboard.chart.audience_podium": "Top 3 par {metric}",
+        "leaderboard.explain.audience": (
+            "Classé selon la métrique choisie ci-dessus — viewers moyens, messages du chat, "
+            "dons par viewer ou par chatteur unique (efficacité d'audience, deux "
+            "dénominateurs différents — un chatteur est un sous-ensemble plus engagé des "
+            "viewers), ou dons par heure réellement streamée (efficacité temporelle, "
+            "indépendante de la taille de l'audience)."
+        ),
         # --- activity ---
         "activity.title": "Activité de stream",
         "activity.description": (
@@ -1126,7 +2833,6 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "activity.no_streamers": "Aucune donnée de streamer disponible pour le moment.",
         "activity.pick_streamer": "Choisir un streamer",
         "activity.no_data": "Aucun historique de titre/catégorie disponible pour ce streamer.",
-        "activity.filters": "Filtres",
         "activity.kpi.segments": "Segments d'activité",
         "activity.kpi.categories": "Catégories distinctes",
         "activity.kpi.tracked_duration": "Durée suivie",
@@ -1150,6 +2856,657 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
             "Temps total suivi que ce streamer a passé dans chaque catégorie Twitch, "
             "cumulé sur tous les segments (une catégorie peut apparaître plusieurs fois "
             "dans la chronologie ci-dessus si le streamer y est revenu plus tard)."
+        ),
+        # --- about ---
+        "about.title": "À propos",
+        "about.description": (
+            "Ce qu'est ce tableau de bord, d'où viennent ses données, et comment il est "
+            "construit."
+        ),
+        "about.what_heading": "Qu'est-ce que le ZEvent ?",
+        "about.what_body": (
+            "Le [ZEvent](https://zevent.fr) est un marathon caritatif de streamers "
+            "français : des dizaines de streamers Twitch diffusent ensemble pendant une "
+            "durée fixe (cette édition : **du 3 au 6 septembre 2026**), et les viewers "
+            "font des dons en direct pour une cause choisie avant l'événement. C'est l'un "
+            "des plus gros événements de streaming caritatif francophones."
+        ),
+        "about.dashboard_heading": "Ce que fait ce tableau de bord",
+        "about.dashboard_body": (
+            "Cette application est une fenêtre en lecture seule sur l'entrepôt de données "
+            "de l'événement, mise à jour au fil de l'événement. Elle couvre les dons, la "
+            "performance des streamers, les jeux/catégories, les objectifs de dons, le "
+            "chat en direct, la communauté des chatteurs, et l'activité par streamer — "
+            "neuf pages au total, accessibles depuis la page d'accueil."
+        ),
+        "about.pipeline_heading": "Comment circulent les données",
+        "about.pipeline_body": (
+            "Deux pipelines indépendants alimentent l'entrepôt : le site de dons/objectifs "
+            "du ZEvent lui-même, et les métadonnées de stream/chat de Twitch — ces "
+            "dernières diffusées via [Apache NiFi](https://nifi.apache.org/). Les deux "
+            "atterrissent dans le même entrepôt PostgreSQL, modélisé avec "
+            "[dbt](https://www.getdbt.com/) sur quatre couches de schéma, chacune "
+            "s'appuyant sur la précédente :"
+        ),
+        "about.pipeline.raw": (
+            "Données brutes, telles qu'ingérées — le flux de chat Twitch et les instantanés "
+            "du site de dons du ZEvent, exactement tels que capturés."
+        ),
+        "about.pipeline.stg": (
+            "Staging (couche bronze) — les enregistrements bruts normalisés dans une forme "
+            "cohérente (types, noms de colonnes) sans en changer le sens."
+        ),
+        "about.pipeline.int": (
+            "Modèles intermédiaires — agrégats par chatteur, par chaîne, par heure, "
+            "construits à partir du staging (ex. « messages par chaîne et par heure »)."
+        ),
+        "about.pipeline.marts": (
+            "Marts prêts à l'emploi — les tables que ce tableau de bord lit réellement, une "
+            "ou plusieurs par page (ex. le classement des chatteurs, la série temporelle "
+            "des dons)."
+        ),
+        "about.pipeline.column_schema": "Schéma",
+        "about.pipeline.column_purpose": "Rôle",
+        "about.infra_heading": "Infrastructure & supervision",
+        "about.infra_body": (
+            "Le pipeline et son hébergement sont provisionnés en code "
+            "(infrastructure as code), pas configurés à la main. "
+            "[Prometheus](https://prometheus.io/) et [Grafana](https://grafana.com/) "
+            "supervisent le pipeline et l'entrepôt (retard d'ingestion, échecs de job, "
+            "fraîcheur des tables), et [ntfy](https://ntfy.sh/) envoie des alertes quand "
+            "quelque chose nécessite attention — ce tableau de bord est un consommateur "
+            "en lecture seule de l'entrepôt que ces alertes protègent, il ne fait pas "
+            "partie de la chaîne d'alerte elle-même."
+        ),
+        "about.freshness_heading": "Fraîcheur des données",
+        "about.freshness_body": (
+            "Chaque requête de page est mise en cache 60 secondes, donc les chiffres "
+            "affichés peuvent avoir jusqu'à une minute de retard sur l'événement en "
+            "direct. Comme il s'agit d'un événement *en direct*, certains marts ont "
+            "besoin qu'une heure soit entièrement terminée avant d'être calculés pour "
+            "elle — le cas le plus visible : l'heure la plus récente du réseau de la "
+            "communauté des chatteurs peut brièvement n'afficher aucune donnée le temps "
+            "que le pipeline de cette heure se termine. Ce tableau de bord sélectionne "
+            "par défaut la dernière heure qui a déjà des données, donc vous ne devriez "
+            "normalement pas le voir — mais c'est pour ça que le sélecteur d'heure peut "
+            "quand même tomber sur une heure vide si vous allez tout au bord."
+        ),
+        "about.privacy_heading": "Confidentialité",
+        "about.privacy_body": (
+            "Les pseudos Twitch sont réels et affichés à l'écran, comme ils apparaîtraient "
+            "dans la chaîne elle-même. Tout export CSV incluant un identifiant de chatteur "
+            "le remplace d'abord par un pseudonyme à sens unique (voir la page Chatteurs), "
+            "donc un fichier téléchargé ne peut jamais être retracé jusqu'à une personne "
+            "réelle."
+        ),
+        "about.stack_heading": "Construit avec",
+        "about.stack_body": (
+            "[Streamlit](https://streamlit.io) pour l'application elle-même, "
+            "[Polars](https://pola.rs) pour toutes les transformations, "
+            "[Plotly](https://plotly.com/python/) pour les graphiques, "
+            "[dbt](https://www.getdbt.com/) + PostgreSQL pour l'entrepôt, le tout en "
+            "Python."
+        ),
+        "about.related_heading": "Projets liés",
+        "about.related_body": (
+            "Cette application fait partie d'un petit écosystème : `zevent-analysis` "
+            "(analyse hors-ligne plus poussée), `zevent-db` (l'entrepôt que lit cette "
+            "application), et `zevent-infra-monitoring` (supervision pipeline/infra). Ce "
+            "tableau de bord est actuellement le seul des quatre avec un livrable "
+            "fonctionnel."
+        ),
+        # --- chat intelligence ---
+        "chatintel.title": "Intelligence du chat",
+        "chatintel.description": (
+            "Analyse légère du texte du chat, sans données d'entraînement : quelles "
+            "chaînes ont le chat le plus \"hype\", positif ou hostile ; quels messages "
+            "sont copiés-collés en masse ; et quels mots deviennent tendance dans le chat "
+            "d'une chaîne au fil du temps. Voir « Comment ces mesures sont calculées » "
+            "ci-dessous pour la méthodologie exacte."
+        ),
+        "chatintel.methodology_heading": "Comment ces mesures sont calculées",
+        "chatintel.methodology_intro": (
+            "Chaque mesure ci-dessous est une heuristique/liste de mots — compter des "
+            "mots et des motifs — pas un modèle de machine learning entraîné. C'est "
+            "volontaire, pas un raccourci : le vrai chat de ZEvent est court, en "
+            "français, riche en emotes, et non étiqueté, et une simple regex sur la "
+            "table sous-jacente d'environ 7,7 millions de messages dépasse "
+            "systématiquement le délai à cette échelle (voir « Échantillonnage » plus "
+            "bas). Dans chaque formule, $p_x$ signifie « la fraction des messages "
+            "échantillonnés qui remplissent la condition $x$ »."
+        ),
+        "chatintel.methodology_hype_intro": (
+            "Score de hype (0-100) — un mélange de ponctuation abondante, de messages "
+            "TOUT EN MAJUSCULES, et de mentions d'emotes hype, pondérés 40/30/30 :"
+        ),
+        "chatintel.methodology_hype_terms": (
+            "p_punct = messages contenant \"!!\" ou plus · p_caps = message entier en "
+            "MAJUSCULES avec au moins 4 lettres · p_emote = messages mentionnant une "
+            "emote hype connue."
+        ),
+        "chatintel.methodology_hype_tunable": (
+            "Les poids (w) valent 0,4/0,3/0,3 par défaut mais sont réglables — voir les "
+            "curseurs dans la section Baromètre de hype du chat ci-dessous."
+        ),
+        "chatintel.methodology_sentiment_intro": (
+            "Score de sentiment (-100 à +100) — taux de mots positifs moins taux de "
+            "mots hostiles :"
+        ),
+        "chatintel.methodology_toxicity_intro": (
+            "Score de toxicité (0-100) — ce même taux de mots hostiles seul :"
+        ),
+        "chatintel.methodology_words_intro": (
+            "Les listes de mots exactement utilisées actuellement — chaque mot a été "
+            "testé individuellement sur le vrai chat avant d'être gardé ; plusieurs "
+            "choix intuitifs (\"con\", \"cretin\", \"stupide\", \"pourri\") ont échoué et "
+            "ont été écartés, voir ci-dessous. La correspondance exige aussi une "
+            "limite de mot juste avant le mot (pas une simple sous-chaîne) : un audit "
+            "sur des données réelles a montré que \"idiot\" en simple sous-chaîne "
+            "correspondait aussi à des codes d'emotes Twitch (\"melokaIdiot\") et au "
+            "pseudo réel de quelqu'un simplement mentionné (\"@je_un_idiot\") — une "
+            "limite de mot écarte les deux, tout en gardant les pluriels et les "
+            "formes allongées par emphase (\"connards\", \"CONNASSEEEE\") qu'une "
+            "limite *plus stricte* des deux côtés aurait manquées."
+        ),
+        "chatintel.methodology_positive_words_label": "Mots positifs :",
+        "chatintel.methodology_hype_emote_words_label": "Mots d'emotes hype :",
+        "chatintel.methodology_hostile_words_label": "Mots hostiles :",
+        "chatintel.methodology_examples_pointer": (
+            "Curieux de savoir ce qui compte vraiment comme \"hostile\" ? Ouvrez "
+            "« Voir des exemples de messages signalés » sous Toxicité du chat "
+            "ci-dessous pour vérifier vous-même de vraies correspondances."
+        ),
+        "chatintel.methodology_keywords_intro": (
+            "Mots-clés tendance — TF-IDF sur les messages d'une chaîne, en regroupant "
+            "tout le texte d'une heure en un seul « document » :"
+        ),
+        "chatintel.methodology_keywords_terms": (
+            "N_hours = nombre total d'heures dans l'historique de la chaîne · df(w) = "
+            "nombre d'heures où le mot w apparaît au moins une fois."
+        ),
+        "chatintel.methodology_phrases_intro": (
+            "Phrases tendance — aucune formule nécessaire : le même message (en "
+            "minuscules, espaces retirés) envoyé au moins 5 fois en une heure sur "
+            "une chaîne, compté directement."
+        ),
+        "chatintel.methodology_correlation_intro": (
+            "Ambiance du chat vs rythme des dons — le coefficient de corrélation de "
+            "Pearson standard entre le score d'ambiance horaire au global et le "
+            "rythme des dons de cette même heure :"
+        ),
+        "chatintel.methodology_sampling_intro": (
+            "Échantillonnage — chaque mesure à l'échelle de l'événement ci-dessus "
+            "(hype, sentiment, toxicité, phrases tendance) tourne sur un échantillon "
+            "aléatoire dimensionné pour rester rapide, pas sur tous les messages :"
+        ),
+        "chatintel.methodology_sampling_terms": (
+            "N_target = 250 000 messages (300 000 pour les phrases tendance) · "
+            "N_total = messages dans la fenêtre sélectionnée. Une fenêtre déjà plus "
+            "petite que la cible utilise tous les messages (sample_rate = 1)."
+        ),
+        "chatintel.methodology_toxicity_privacy": (
+            "Le *score* de toxicité ci-dessus est une tendance au niveau de la "
+            "chaîne volontairement — il s'agit de savoir quelles chaînes chauffent, "
+            "pas de pointer un chatteur en particulier. Les messages d'exemple "
+            "ci-dessous, et les outils de toxicité du ML Lab, affichent bien le vrai "
+            "chatteur ayant envoyé un message signalé (comme toutes les autres pages "
+            "listant des chatteurs dans cette application) — mais l'heuristique se "
+            "trompe encore parfois (voir la liste de mots ci-dessus et ses faux "
+            "positifs connus), donc traitez un signalement comme quelque chose à "
+            "vérifier en contexte, pas comme un verdict sur la personne."
+        ),
+        "chatintel.no_streamers": "Aucune donnée de streamer disponible pour le moment.",
+        "chatintel.hype_heading": "Baromètre de hype du chat",
+        "chatintel.hype_weight_punct": "Poids ponctuation",
+        "chatintel.hype_weight_caps": "Poids MAJUSCULES",
+        "chatintel.hype_weight_emote": "Poids emotes hype",
+        "chatintel.hype_top_n": "Afficher le top N chaînes",
+        "chatintel.hype_caption": (
+            "Les meilleures chaînes au global par \"hype\" du chat — un mélange "
+            "heuristique de messages riches en points d'exclamation, de messages "
+            "TOUT EN MAJUSCULES et de mentions d'emotes hype, pas le volume brut de "
+            "messages. Une petite communauté plus excitable peut dépasser une bien plus "
+            "grande mais plus calme. Faites glisser les trois curseurs ci-dessous pour "
+            "changer le poids de chaque signal — le graphique se recalcule instantanément, "
+            "sans recharger la page."
+        ),
+        "chatintel.chart.hype": "Score de hype du chat, dans le temps",
+        "chatintel.unit.hype_score": "score de hype",
+        "chatintel.no_hype": "Aucune donnée de hype disponible pour le moment.",
+        "chatintel.explain.hype": (
+            "Le score de hype (0-100) combine trois signaux par message, moyennés par "
+            "heure : ponctuation \"!!\" ou plus, messages TOUT EN MAJUSCULES, et mentions "
+            "d'emotes hype connues (LUL, KEKW, PogChamp, ...) — pondérés selon les trois "
+            "curseurs ci-dessus (0,4/0,3/0,3 par défaut). Les trois taux bruts sont "
+            "récupérés une seule fois par plage de dates et la pondération est recalculée "
+            "dans le navigateur, donc déplacer un curseur ne relance jamais de requête "
+            "vers la base de données. Calculé sur un échantillon aléatoire des messages "
+            "de l'heure (les heures avec trop peu de messages échantillonnés sont "
+            "ignorées) plutôt qu'un scan complet, une analyse message par message sur "
+            "tout l'événement étant trop lente à la demande. Survolez un point pour son "
+            "classement exact cette heure-là parmi toutes les chaînes."
+        ),
+        "chatintel.sentiment_heading": "Sentiment du chat",
+        "chatintel.sentiment_top_n": "Afficher le top N chaînes",
+        "chatintel.sentiment_caption": (
+            "Les chaînes les plus positives au global, heure par heure — taux de mots "
+            "positifs moins taux de mots hostiles. Ce n'est pas la même chose que la "
+            "hype ci-dessus : une chaîne peut être très positive sans être bruyante, ou "
+            "bruyante sans être particulièrement positive."
+        ),
+        "chatintel.chart.sentiment": "Score de sentiment du chat, dans le temps",
+        "chatintel.unit.sentiment_score": "score de sentiment",
+        "chatintel.no_sentiment": "Aucune donnée de sentiment disponible pour le moment.",
+        "chatintel.explain.sentiment": (
+            "Le score de sentiment (-100 à +100) est un taux de mots positifs "
+            "sélectionnés (\"merci\", \"super\", \"bravo\", \"excellent\", ...) moins le "
+            "même taux de mots hostiles utilisé par la toxicité (ci-dessous), moyenné "
+            "par heure, calculé de la même façon échantillonnée que la hype (voir "
+            "« Comment ces mesures sont calculées » ci-dessus). Survolez un point pour "
+            "son classement exact cette heure-là parmi toutes les chaînes."
+        ),
+        "chatintel.toxicity_heading": "Toxicité du chat",
+        "chatintel.toxicity_top_n": "Afficher le top N chaînes",
+        "chatintel.toxicity_caption": (
+            "Les chaînes les plus hostiles au global, heure par heure — comment le "
+            "langage le plus négatif du chat se déplace entre les chaînes au fil de "
+            "l'événement. Ceci suit des *chaînes*, pas des chatteurs : aucun chatteur "
+            "n'est jamais nommé ou signalé comme \"toxique\" ici, volontairement (voir "
+            "« Comment ces mesures sont calculées » ci-dessus)."
+        ),
+        "chatintel.chart.toxicity": "Score de toxicité du chat, dans le temps",
+        "chatintel.unit.toxicity_score": "score de toxicité",
+        "chatintel.no_toxicity": "Aucune donnée de toxicité disponible pour le moment.",
+        "chatintel.explain.toxicity": (
+            "Le score de toxicité (0-100) est un taux de mots hostiles sélectionnés "
+            "(\"connard\", \"idiot\", \"dégage\", \"ta gueule\", ...), moyenné par heure, "
+            "calculé de la même façon échantillonnée que la hype (voir « Comment ces "
+            "mesures sont calculées » ci-dessus). Il mesure une densité de langage "
+            "hostile, pas un classificateur certifié de harcèlement/discours haineux — "
+            "il manquera les insultes et propos hostiles qui évitent ces mots précis, et "
+            "ne peut pas distinguer une insulte ciblée d'une taquinerie entre amis. "
+            "Survolez un point pour son classement exact cette heure-là parmi toutes les "
+            "chaînes."
+        ),
+        "chatintel.toxicity_examples_heading": "Voir des exemples de messages signalés",
+        "chatintel.toxicity_examples_caption": (
+            "Un échantillon aléatoire de messages correspondant à la liste de mots "
+            "hostiles ci-dessus dans la fenêtre sélectionnée — vérifiez vous-même le "
+            "travail de l'heuristique. Affiche la vraie chaîne et le vrai chatteur, "
+            "comme les pages Chatteurs/Streamers/Communauté — mais la liste de mots "
+            "se trompe encore parfois (voir la mise en garde sur les faux positifs "
+            "ci-dessus), donc traitez une correspondance ici comme une piste à "
+            "regarder, pas comme un verdict."
+        ),
+        "chatintel.no_toxicity_examples": (
+            "Aucun message signalé dans la plage sélectionnée pour le moment."
+        ),
+        "chatintel.column.chatter": "Chatteur",
+        "chatintel.column.message": "Message",
+        "chatintel.correlation_heading": "Ambiance du chat vs rythme des dons",
+        "chatintel.correlation_caption": (
+            "L'excitation ou la positivité du chat suit-elle vraiment le montant des "
+            "dons ? La hype et le sentiment sont ici moyennés sur toutes les chaînes "
+            "chaque heure, pas seulement le top N — une seule ambiance globale par "
+            "heure, comparée au rythme des dons de cette même heure."
+        ),
+        "chatintel.no_correlation": (
+            "Pas assez d'heures en commun pour calculer une corrélation pour le moment."
+        ),
+        "chatintel.correlation_summary": (
+            "Sur {n} heures : la hype est corrélée à r = {hype_corr} avec le rythme des "
+            "dons ; le sentiment est corrélé à r = {sentiment_corr}. Un coefficient "
+            "proche de 0 signifie aucune relation, proche de +1/-1 une relation forte — "
+            "avec seulement quelques dizaines d'heures, considérez ceci comme un signal "
+            "approximatif, pas une mesure précise, et rappelez-vous que corrélation "
+            "n'est pas causalité."
+        ),
+        "chatintel.chart.correlation": "Hype du chat vs rythme des dons, un point par heure",
+        "chatintel.explain.correlation": (
+            "Chaque point est une heure : son score de hype moyen au global (axe X) "
+            "contre le montant donné cette heure-là (axe Y). Un nuage de points qui "
+            "monte de gauche à droite suggère que la hype et les dons évoluent "
+            "ensemble cette heure-là ; un nuage plat ou dispersé suggère le contraire. "
+            "Calculé à partir de `chat_mood_timeseries` (même échantillonnage que la "
+            "hype/le sentiment ci-dessus) rapproché du rythme horaire propre à la page "
+            "des dons."
+        ),
+        "chatintel.phrases_heading": "Phrases tendance & copypasta",
+        "chatintel.phrases_top_n": "Afficher le top N phrases",
+        "chatintel.phrases_caption": (
+            "Les messages exacts (normalisés en casse/espaces) les plus répétés au sein "
+            "d'une même heure sur une même chaîne, tous canaux confondus — le classique "
+            "\"copypasta\" du chat Twitch : la même ligne spammée par de nombreux "
+            "chatteurs en rafale."
+        ),
+        "chatintel.no_phrases": "Aucune phrase répétée trouvée pour le moment.",
+        "chatintel.column.hour": "Heure",
+        "chatintel.column.channel": "Chaîne",
+        "chatintel.column.phrase": "Phrase",
+        "chatintel.column.repeat_count": "Répétitions",
+        "chatintel.explain.phrases": (
+            "Compté sur un échantillon aléatoire des messages de chaque heure, pas un "
+            "scan complet (même raison que le baromètre de hype ci-dessus) — les vrais "
+            "nombres de répétitions sont plus élevés que ceux affichés. Seules les "
+            "phrases répétées au moins 5 fois dans l'heure échantillonnée sont gardées, "
+            "pour filtrer les messages courts que deux chatteurs auraient envoyés une "
+            "fois chacun par coïncidence."
+        ),
+        "chatintel.keywords_heading": "Mots tendance par chaîne",
+        "chatintel.pick_channel": "Choisir une chaîne",
+        "chatintel.keywords_caption": (
+            "Les mots les plus distinctifs du chat d'une chaîne, heure par heure — un mot "
+            "qui explose soudainement pendant une heure (un shoutout, une blague "
+            "récurrente, la révélation d'un objectif de dons) ressort devant des mots "
+            "utilisés à un rythme faible mais constant."
+        ),
+        "chatintel.no_keywords": "Aucune donnée de chat disponible pour cette chaîne pour le moment.",
+        "chatintel.column.keywords": "Mots-clés principaux",
+        "chatintel.explain.keywords": (
+            "Utilise tous les messages de la chaîne sélectionnée (pas d'échantillonnage "
+            "nécessaire — récupérer tous les messages d'une seule chaîne reste bon "
+            "marché). Les mots de chaque heure sont notés par TF-IDF : leur fréquence "
+            "cette heure-là, pondérée à la hausse selon leur rareté sur les autres heures "
+            "de la chaîne — la même statistique utilisée par les moteurs de recherche "
+            "pour distinguer un mot distinctif d'un mot courant. Aucun modèle de "
+            "sentiment ou de sujet n'est utilisé."
+        ),
+        # --- chat ml lab ---
+        "chatml.title": "Chat ML Lab",
+        "chatml.description": (
+            "De vrais modèles de machine learning entraînés sur le chat en direct — "
+            "plus lourds et plus lents que les heuristiques à base de mots "
+            "d'Intelligence du chat, pour des questions que celles-ci ne peuvent pas "
+            "résoudre : quels sujets le chat découvre-t-il réellement, quels segments "
+            "comportementaux existent parmi les chatteurs, et un vrai modèle est-il "
+            "seulement d'accord avec la liste de mots ?"
+        ),
+        "chatml.topics_heading": "Clusters de sujets des messages",
+        "chatml.topics_caption": (
+            "Un vrai clustering non supervisé (K-Means sur TF-IDF), pas un classement "
+            "de mots-clés — chaque heure de chat d'une chaîne est regroupée en un seul "
+            "« document » et rapprochée des heures similaires sur tout l'événement, "
+            "découvrant de vrais sujets (un moment de vote façon Twitch-plays, le "
+            "bavardage riche en emotes propre à une chaîne, des discussions sur les "
+            "objectifs de dons, ...) plutôt que de simplement compter des mots."
+        ),
+        "chatml.topics_n_clusters": "Nombre de clusters de sujets",
+        "chatml.no_topics": (
+            "Pas assez de messages dans la plage sélectionnée pour former des clusters "
+            "de sujets pour le moment."
+        ),
+        "chatml.chart.topics": "Taille des clusters de sujets (heures-chaîne)",
+        "chatml.column.cluster": "Cluster",
+        "chatml.column.channel_hours": "Heures-chaîne",
+        "chatml.column.top_terms": "Termes principaux",
+        "chatml.explain.topics": (
+            "Chaque heure-chaîne avec assez de messages échantillonnés devient un "
+            "« document » TF-IDF ; K-Means regroupe les documents similaires entre "
+            "eux. Les « termes principaux » d'un cluster sont les mots qui définissent "
+            "le plus son centroïde — pas forcément son mot le plus fréquent, mais les "
+            "mots qui le distinguent le plus de tous les autres clusters. Le "
+            "clustering des messages individuels bruts a été essayé en premier puis "
+            "écarté : les vrais messages de chat sont si courts que presque tous se "
+            "retrouvaient dans un seul cluster fourre-tout sans intérêt ; regrouper "
+            "d'abord par heure-chaîne corrige cela."
+        ),
+        "chatml.streamers_heading": "Segments comportementaux des streamers",
+        "chatml.streamers_caption": (
+            "Un vrai clustering non supervisé (K-Means) sur la forme de performance "
+            "de chaque streamer — dons récoltés, taille d'audience, heures en direct, "
+            "temps de disponibilité — regroupant les streamers selon leur événement, "
+            "pas par catégorie ou équipe (il n'y a pas de dimension équipe dans ces "
+            "données)."
+        ),
+        "chatml.streamers_n_clusters": "Nombre de segments comportementaux",
+        "chatml.no_streamers_ml": (
+            "Pas assez de streamers dans la plage sélectionnée pour former des "
+            "segments comportementaux pour le moment."
+        ),
+        "chatml.column.streamers": "Streamers",
+        "chatml.column.avg_amount": "Dons moy. (€)",
+        "chatml.column.avg_avg_viewers": "Viewers moy.",
+        "chatml.column.avg_hours_live": "Heures en direct moy.",
+        "chatml.column.avg_uptime_pct": "Disponibilité moy. %",
+        "chatml.column.streamer": "Streamer",
+        "chatml.column.amount": "Dons (€)",
+        "chatml.column.avg_viewers_short": "Viewers moy.",
+        "chatml.streamers_examples_heading": "Voir des exemples de streamers par cluster",
+        "chatml.explain.streamers": (
+            "Chaque caractéristique est transformée en logarithme avant le "
+            "clustering, même raisonnement que les segments de chatteurs ci-dessous "
+            "— les vrais chiffres de dons/audience sont très asymétriques (confirmé "
+            "sur des données réelles : les dons totaux vont de 0 € à plus de 2 M€ "
+            "contre une médiane de 3,3 k€), et sans cette transformation une poignée "
+            "de méga-collecteurs domineraient la formation des clusters au lieu de "
+            "la forme du gros du plateau."
+        ),
+        "chatml.chatters_heading": "Segments comportementaux des chatteurs",
+        "chatml.chatters_caption": (
+            "Un vrai clustering non supervisé (K-Means) sur la forme d'activité de "
+            "chaque chatteur — combien de chaînes il visite, combien il poste, combien "
+            "de temps il reste — plus riche qu'une étiquette fixe "
+            "« sédentaire / nomade » puisque les segments sont découverts à partir des "
+            "données elles-mêmes, pas définis à l'avance. Les comptes probablement "
+            "bots sont exclus au préalable."
+        ),
+        "chatml.chatters_n_clusters": "Nombre de segments comportementaux",
+        "chatml.no_chatters": (
+            "Pas assez de chatteurs dans la plage sélectionnée pour former des "
+            "segments comportementaux pour le moment."
+        ),
+        "chatml.column.chatters": "Chatteurs",
+        "chatml.column.chatter": "Chatteur",
+        "chatml.column.avg_channels": "Chaînes moy.",
+        "chatml.column.avg_messages": "Messages moy.",
+        "chatml.column.avg_lifespan_hours": "Durée de vie moy. (h)",
+        "chatml.column.avg_messages_per_channel": "Messages moy. / chaîne",
+        "chatml.chatters_examples_heading": "Voir des exemples de chatteurs par cluster",
+        "chatml.explain.chatters": (
+            "Chaque caractéristique est transformée en logarithme avant le "
+            "clustering — l'activité réelle des chatteurs est très asymétrique "
+            "(une poignée de comptes postent des milliers de fois plus que la "
+            "médiane), et sans cette transformation quelques comptes extrêmes "
+            "domineraient la formation des clusters au lieu de la forme du gros de la "
+            "population. Comparez les moyennes propres à un cluster à celles des "
+            "autres pour voir ce qui le définit — un nombre moyen élevé de messages "
+            "par chaîne avec peu de chaînes visitées se lit comme « superfan "
+            "fidèle » ; beaucoup de chaînes avec peu de messages au total se lit "
+            "comme « spectateur qui zappe entre les chaînes »."
+        ),
+        "chatml.outliers_heading": "Détection d'anomalies",
+        "chatml.outliers_caption": (
+            "Une vraie détection d'anomalies non supervisée (Isolation Forest) — "
+            "signale les streamers, chatteurs, ou heures d'ambiance de chat dont les "
+            "chiffres ne ressemblent au cas typique dans *aucune* des deux "
+            "directions. Confirmé sur des données réelles : ceci fait ressortir à la "
+            "fois les plus gros collecteurs de fonds de l'événement et ses entrées "
+            "quasi inactives comme « statistiquement inhabituels » à la fois — une "
+            "anomalie n'est pas automatiquement un problème, juste inhabituelle."
+        ),
+        "chatml.outliers_target_label": "Chercher des anomalies parmi",
+        "chatml.outliers_target_streamers": "Streamers",
+        "chatml.outliers_target_chatters": "Chatteurs",
+        "chatml.outliers_target_hours": "Heures d'ambiance du chat",
+        "chatml.outliers_contamination": "Fraction d'anomalies attendue",
+        "chatml.no_outliers": (
+            "Pas assez de lignes dans la plage sélectionnée pour détecter des "
+            "anomalies pour le moment."
+        ),
+        "chatml.column.uptime_pct": "Disponibilité %",
+        "chatml.column.anomaly_score": "Score d'anomalie",
+        "chatml.column.hour": "Heure",
+        "chatml.column.avg_hype": "Score de hype moy.",
+        "chatml.column.avg_sentiment": "Score de sentiment moy.",
+        "chatml.explain.outliers": (
+            "« Fraction d'anomalies attendue » est le seul réglage d'Isolation "
+            "Forest — augmentez-la pour voir plus de lignes signalées (et moins "
+            "extrêmes), baissez-la pour ne voir que les quelques cas les plus "
+            "extrêmes. Le « score d'anomalie » est la fonction de décision propre au "
+            "modèle : plus négatif signifie plus anormal, donc les lignes les plus "
+            "inhabituelles sont triées en premier. Les caractéristiques des "
+            "streamers/chatteurs sont d'abord transformées en logarithme pour les "
+            "mêmes raisons d'asymétrie que leurs sections de clustering ci-dessus ; "
+            "les heures d'ambiance du chat ne le sont pas, le sentiment pouvant être "
+            "négatif."
+        ),
+        "chatml.classify_heading": "Vrai modèle vs liste de mots : sentiment & toxicité",
+        "chatml.classify_caption": (
+            "Exécute de vrais modèles transformer pré-entraînés (pas des listes de "
+            "mots) sur un petit échantillon de messages — certains déjà signalés "
+            "comme hostiles par la liste de mots d'Intelligence du chat, d'autres au "
+            "hasard — et compare leur verdict à celui de la liste de mots. Charge "
+            "environ 1 à 2 Go de poids de modèle la première fois (mis en cache "
+            "ensuite) ; cliquez pour lancer. Affiche la vraie chaîne et le vrai "
+            "chatteur — mais ni le modèle ni la liste de mots n'est un "
+            "classificateur certifié, donc lisez un signalement "
+            "\"toxique\"/\"hostile\" comme une piste à vérifier en contexte, pas "
+            "comme un verdict."
+        ),
+        "chatml.classify_button": "Lancer la classification ML",
+        "chatml.classify_spinner": (
+            "Exécution des modèles de sentiment et de toxicité (peut télécharger "
+            "environ 1 à 2 Go la première fois)..."
+        ),
+        "chatml.no_classify": "Aucun message disponible à classifier dans la plage sélectionnée.",
+        "chatml.classify_agreement": (
+            "Le modèle ML de toxicité et la liste de mots sont d'accord sur {pct} % "
+            "de cet échantillon. Leurs désaccords se situent généralement là où le "
+            "contexte compte — voir le tableau ci-dessous."
+        ),
+        "chatml.column.channel_short": "Chaîne",
+        "chatml.column.message": "Message",
+        "chatml.column.lexicon_verdict": "La liste de mots dit hostile",
+        "chatml.column.ml_sentiment": "Sentiment ML",
+        "chatml.column.ml_toxicity": "Toxicité ML",
+        "chatml.explain.classify": (
+            "Modèle de sentiment : cardiffnlp/twitter-xlm-roberta-base-sentiment "
+            "(multilingue, entraîné sur du texte de réseaux sociaux). Modèle de "
+            "toxicité : textdetox/xlmr-large-toxicity-classifier — choisi après des "
+            "tests sur du vrai chat : une alternative plus petite avait étiqueté avec "
+            "confiance \"gg les gars, quel beau run\" (un message amical) comme "
+            "toxique à 99 % et avait totalement raté une vraie insulte. Un modèle "
+            "peut lire un contexte que la liste de mots ne peut pas — par exemple "
+            "reconnaître \"ta gueule\" entre amis comme surtout joueur plutôt "
+            "qu'hostile — ce qui est exactement pourquoi comparer les deux vaut le "
+            "coup plutôt que de faire confiance à un seul."
+        ),
+        "chatml.classify_hint": (
+            "Cliquez sur « Lancer la classification ML » ci-dessus pour charger les "
+            "modèles et voir une comparaison — non exécuté automatiquement, car cela "
+            "peut télécharger environ 1 à 2 Go la première fois."
+        ),
+        "chatml.column.pca1": "Composante principale 1",
+        "chatml.column.pca2": "Composante principale 2",
+        "chatml.chart.streamers_pca": "Segments de streamers, projetés en 2D (ACP)",
+        "chatml.streamers_pca_caption": (
+            "Chaque point est un streamer, coloré selon son cluster comportemental "
+            "ci-dessus — le même espace à 7 variables sur lequel le clustering a "
+            "été ajusté, projeté sur les 2 directions de plus grande variation pour "
+            "que les segments soient réellement visibles, pas seulement tabulés. La "
+            "distance sur ce graphique reflète la similarité de forme de "
+            "performance entre deux streamers, pas leurs gains bruts. Survolez un "
+            "point pour voir le nom du streamer et sa chaîne Twitch."
+        ),
+        "chatml.explain.streamers_pca": (
+            "Trois étapes transforment les 7 variables brutes (`amount_eur`, "
+            "`hours_live`, `avg_viewers`, `peak_viewers`, `unique_chatters`, "
+            "`total_messages`, `uptime_pct`) en les 2 axes tracés ci-dessus — les "
+            "mêmes étapes sur lesquelles `cluster_streamers` lui-même s'ajuste, "
+            "donc cette vue correspond exactement aux clusters plutôt que d'être "
+            "une projection choisie séparément :\n\n"
+            "1. **Transformation logarithmique** de chaque variable pour atténuer "
+            "son asymétrie à droite (`amount_eur` seul va de presque zéro à plus "
+            "de 2 M€) : $x' = \\log(1+x)$.\n"
+            "2. **Standardisation** pour qu'aucune variable ne domine par sa seule "
+            "échelle brute : $z = \\dfrac{x' - \\mu}{\\sigma}$, avec la moyenne "
+            "$\\mu$ et l'écart-type $\\sigma$ calculés par variable sur tous les "
+            "streamers.\n"
+            "3. **Projection** du vecteur standardisé à 7 dimensions $z$ de chaque "
+            "streamer sur les 2 premières composantes principales $w_1, w_2$ — "
+            "les 2 directions de l'espace à 7 dimensions (trouvées par "
+            "décomposition en valeurs propres de la matrice de covariance de $z$) "
+            "qui captent le plus de variance : $\\mathrm{PC}_i = z \\cdot w_i$.\n\n"
+            "Les deux axes ne correspondent à aucune variable d'origine unique — "
+            "chacun est un mélange pondéré des sept — donc lisez ce graphique pour "
+            "la position *relative* et le regroupement, pas comme des valeurs "
+            "littérales de dons ou de viewers."
+        ),
+        "chatml.chart.chatters_pca": "Segments de chatteurs, projetés en 2D (ACP)",
+        "chatml.chatters_pca_caption": (
+            "Même principe que le graphique ACP des streamers ci-dessus, sur "
+            "l'espace des variables comportementales des chatteurs — chaque point "
+            "est un chatteur, coloré selon son cluster. Survolez un point pour "
+            "voir le nom du chatteur."
+        ),
+        "chatml.explain.chatters_pca": (
+            "Même pipeline transformation log → standardisation → projection que "
+            "le graphique ACP des streamers ci-dessus (voir son « Comment lire ce "
+            "graphique » pour les formules), appliqué cette fois aux 6 variables "
+            "comportementales des chatteurs (`distinct_channel_count`, "
+            "`total_message_count`, `lifespan_hours`, "
+            "`gap_coefficient_of_variation`, `avg_messages_per_channel`, "
+            "`top_channel_share`) sur lesquelles `cluster_chatters` lui-même "
+            "s'ajuste."
+        ),
+        "chatml.forecast_heading": "Prévision des dons à partir d'un instantané en cours d'événement",
+        "chatml.forecast_caption": (
+            "Une régression Random Forest entraînée à prédire le total final de "
+            "dons de chaque streamer à partir d'un instantané de ses propres dons "
+            "cumulés, viewers et activité de chat à une date antérieure — une "
+            "véritable prévision d'un futur inconnu à partir d'un passé connu, pas "
+            "une prédiction d'un nombre à partir de lui-même. Déplacez le curseur "
+            "pour voir comment la précision évolue selon la précocité de "
+            "l'instantané."
+        ),
+        "chatml.no_forecast": (
+            "Pas assez de streamers dans la plage/le filtre sélectionné pour "
+            "ajuster et évaluer un modèle de prévision."
+        ),
+        "chatml.forecast_cutoff": "Instant de l'instantané (fraction de la plage de dates sélectionnée)",
+        "chatml.forecast_cutoff_caption": "Instantané pris à la date : {cutoff}",
+        "chatml.forecast_r2": "R² (jeu de test)",
+        "chatml.forecast_mae": "MAE (jeu de test)",
+        "chatml.forecast_n_test": "Streamers réservés pour le test",
+        "chatml.forecast_perfect_line": "Prédiction parfaite",
+        "chatml.forecast_scatter_name": "Streamer",
+        "chatml.chart.forecast_scatter": "Dons finaux prédits vs réels (jeu de test)",
+        "chatml.forecast_axis_actual": "Dons finaux réels (€)",
+        "chatml.forecast_axis_predicted": "Dons finaux prédits (€)",
+        "chatml.chart.forecast_importance": "Sur quoi le modèle s'appuie le plus",
+        "chatml.forecast_feature_amount": "Dons jusqu'ici",
+        "chatml.forecast_feature_avg_viewers": "Viewers moy. jusqu'ici",
+        "chatml.forecast_feature_peak_viewers": "Pic de viewers jusqu'ici",
+        "chatml.forecast_feature_messages": "Messages de chat jusqu'ici",
+        "chatml.explain.forecast": (
+            "**Pourquoi ce n'est pas circulaire.** Prédire le total final d'un "
+            "streamer à partir de ses propres statistiques *finales* (ex. viewers "
+            "finaux) serait quasi tautologique — un nombre corrèle évidemment avec "
+            "lui-même. Ici, chaque variable est prise strictement *avant* "
+            "l'instant choisi, et seul ce qui se passe *après* est prédit — la "
+            "même contrainte passé-seulement-prédit-le-futur que toute véritable "
+            "prévision impose.\n\n"
+            "**Pourquoi transformé en log.** Dons, viewers et nombres de messages "
+            "sont tous fortement asymétriques (quelques méga-collecteurs, une "
+            "longue traîne de petits) — ajuster sur $x' = \\log(1+x)$ empêche le "
+            "modèle d'être dominé par le plus gros streamer à lui seul, puis les "
+            "prédictions sont reconverties en euros ($x = e^{x'} - 1$) avant "
+            "l'évaluation, donc le R²/MAE ci-dessus sont dans les mêmes unités "
+            "que le graphique.\n\n"
+            "**Comment lire les métriques**, pour $n$ streamers de test avec "
+            "totaux finaux réels $y_i$ et prédits $\\hat y_i$ (moyenne réelle "
+            "$\\bar y$) :\n"
+            "- $R^2 = 1 - \\dfrac{\\sum_i (y_i - \\hat y_i)^2}"
+            "{\\sum_i (y_i - \\bar y)^2}$ — proche de 1,0 signifie que "
+            "l'instantané explique presque toute la variation des totaux finaux ; "
+            "0 signifie qu'il n'explique pas mieux que deviner toujours la "
+            "moyenne.\n"
+            "- $\\mathrm{MAE} = \\dfrac{1}{n}\\sum_i |y_i - \\hat y_i|$ — l'erreur "
+            "moyenne de prédiction, en euros.\n\n"
+            "Les deux sont calculées uniquement sur le jeu de test de 25 % mis de "
+            "côté — des streamers que le modèle n'a jamais vus pendant "
+            "l'entraînement — une estimation honnête de l'erreur de prévision, "
+            "pas gonflée par un test sur les données d'entraînement elles-mêmes."
         ),
     },
 }

@@ -24,10 +24,25 @@ from datetime import datetime
 from pathlib import Path
 from typing import cast
 
+import plotly.graph_objects as go
+import polars as pl
 import streamlit as st
 
+from app.components.chrome import (
+    chart_explainer,
+    date_filter_caveat,
+    entity_filter_caveat,
+    page_footer,
+)
+from app.components.filters import (
+    apply_global_chatter_filter,
+    apply_global_streamer_filter,
+    get_global_date_range,
+    render_global_date_filter,
+    render_global_entity_filters,
+)
 from app.components.search import render_global_search
-from app.components.theme import inject_global_css
+from app.components.theme import CATEGORICAL, apply_base_layout, inject_global_css
 from app.core.config import get_settings
 from app.core.db import check_connection
 from app.core.i18n import language_selector, t
@@ -36,6 +51,8 @@ from app.data.repository import (
     get_chat_activity_timeseries,
     get_chatter_breakdown,
     get_donation_timeseries,
+    get_event_bounds,
+    get_event_daily_rollup,
     get_streamer_breakdown,
     get_viewership_timeseries,
 )
@@ -57,6 +74,8 @@ st.set_page_config(
 language_selector()
 with st.sidebar:
     render_global_search()
+    render_global_date_filter()
+    render_global_entity_filters()
 
 
 def _render_home() -> None:
@@ -78,9 +97,15 @@ def _render_home() -> None:
         st.error(t("home.db_error"), icon="🚨")
 
     st.subheader(t("home.kpi_heading"))
+    streamers = apply_global_streamer_filter(get_streamer_breakdown())
+    date_range = get_global_date_range() or get_event_bounds()
+    chatters = get_chatter_breakdown(*date_range) if date_range else pl.DataFrame()
+    chatters = apply_global_chatter_filter(chatters)
+    # Donations/chat-activity/viewership below are event-wide totals with no
+    # per-row timestamp or channel column — unaffected by any sidebar filter.
+    date_filter_caveat()
+    entity_filter_caveat()
     donations = get_donation_timeseries()
-    streamers = get_streamer_breakdown()
-    chatters = get_chatter_breakdown()
     chat_activity = get_chat_activity_timeseries()
     viewership = get_viewership_timeseries()
 
@@ -92,20 +117,59 @@ def _render_home() -> None:
     else:
         duration_display = "—"
 
-    kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
-    kpi1.metric(t("home.kpi.duration"), duration_display)
-    kpi2.metric(t("home.kpi.streamers"), f"{len(streamers):,}" if not streamers.is_empty() else "—")
-    kpi3.metric(t("home.kpi.chatters"), f"{len(chatters):,}" if not chatters.is_empty() else "—")
-    kpi4.metric(
+    # Two rows of 3, not one row of 6 — a formatted total like "1,032,223 €"
+    # needs more than a sixth of the page width to read comfortably.
+    kpi1, kpi2, kpi3 = st.columns(3)
+    kpi4, kpi5, kpi6 = st.columns(3)
+    kpi1.metric(
+        t("home.kpi.total_raised"),
+        f"{donations['cumulative_amount_eur'][-1]:,.0f} €" if not donations.is_empty() else "—",
+    )
+    kpi2.metric(t("home.kpi.duration"), duration_display)
+    kpi3.metric(t("home.kpi.streamers"), f"{len(streamers):,}" if not streamers.is_empty() else "—")
+    kpi4.metric(t("home.kpi.chatters"), f"{len(chatters):,}" if not chatters.is_empty() else "—")
+    kpi5.metric(
         t("home.kpi.messages"),
         f"{chat_activity['message_count'].sum():,.0f}" if not chat_activity.is_empty() else "—",
     )
-    kpi5.metric(
+    kpi6.metric(
         t("home.kpi.peak_viewers"),
         f"{viewership['total_avg_viewer_count'].max():,.0f}" if not viewership.is_empty() else "—",
     )
 
+    date_range = get_global_date_range()
+    daily_rollup = get_event_daily_rollup(*date_range) if date_range else pl.DataFrame()
+    if not daily_rollup.is_empty():
+        st.subheader(t("home.daily_heading"))
+        st.caption(t("home.daily_caption"))
+        daily_fig = go.Figure(
+            go.Bar(
+                x=daily_rollup["day_bucket"],
+                y=daily_rollup["donation_delta_eur"],
+                marker_color=CATEGORICAL[0],
+                hovertemplate="%{x|%a %d %b}<br>%{y:,.0f} €<extra></extra>",
+            )
+        )
+        apply_base_layout(daily_fig, title=t("home.chart.daily"), height=300)
+        daily_fig.update_xaxes(dtick=86_400_000)
+        daily_fig.update_yaxes(title_text="€")
+        daily_fig.update_layout(showlegend=False)
+        st.plotly_chart(daily_fig, width="stretch")
+        chart_explainer(t("home.explain.daily"))
+        st.dataframe(
+            daily_rollup.select(
+                "day_bucket",
+                "message_count",
+                "active_channels",
+                "avg_total_viewer_count",
+                "total_donation_amount_eur_end_of_day",
+            ),
+            width="stretch",
+            hide_index=True,
+        )
+
     st.markdown(t("home.about_body"))
+    st.page_link(about_page, label=t("home.about_link"), icon=about_page.icon)
 
     st.divider()
     st.subheader(t("home.pages_heading"))
@@ -120,6 +184,10 @@ def _render_home() -> None:
         (chatters_page, "chatters.description"),
         (tracker_page, "tracker.description"),
         (activity_page, "activity.description"),
+        (messages_page, "messages.description"),
+        (leaderboard_page, "leaderboard.description"),
+        (chatintel_page, "chatintel.description"),
+        (chatml_page, "chatml.description"),
     ]
     for row_start in range(0, len(page_cards), 3):
         row = st.columns(3)
@@ -128,8 +196,7 @@ def _render_home() -> None:
                 st.page_link(page, label=page.title, icon=page.icon)
                 st.write(t(desc_key))
 
-    st.divider()
-    st.markdown(t("home.related_projects"))
+    page_footer()
 
     logger.info("Home page rendered (use_mock_data=%s)", settings.use_mock_data)
 
@@ -144,10 +211,16 @@ community_page = st.Page("pages/6_👥_Community.py", title=t("community.title")
 tracker_page = st.Page("pages/7_🏆_Donation_Tracker.py", title=t("tracker.title"), icon="🏆")
 chatters_page = st.Page("pages/8_🗣️_Chatters.py", title=t("chatters.title"), icon="🗣️")
 activity_page = st.Page("pages/9_📺_Activity.py", title=t("activity.title"), icon="📺")
+about_page = st.Page("pages/10_ℹ️_About.py", title=t("about.title"), icon="ℹ️")  # noqa: RUF001
+messages_page = st.Page("pages/11_🔎_Chat_Messages.py", title=t("messages.title"), icon="🔎")
+leaderboard_page = st.Page("pages/12_🥇_Leaderboard.py", title=t("leaderboard.title"), icon="🥇")
+chatintel_page = st.Page(
+    "pages/13_🧠_Chat_Intelligence.py", title=t("chatintel.title"), icon="🧠"
+)
+chatml_page = st.Page("pages/14_🔬_Chat_ML_Lab.py", title=t("chatml.title"), icon="🔬")
 
-navigation = st.navigation(
+content_pages = sorted(
     [
-        home_page,
         donations_page,
         streamers_page,
         games_page,
@@ -157,6 +230,33 @@ navigation = st.navigation(
         chatters_page,
         tracker_page,
         activity_page,
-    ]
+        messages_page,
+        leaderboard_page,
+        chatintel_page,
+        chatml_page,
+    ],
+    key=lambda page: page.title,
+)
+
+navigation = st.navigation(
+    {
+        # An untitled first section, not a flat list: `st.navigation` always
+        # inserts a small section-label caption above a *labeled* group, so
+        # putting About in its own second group is what visually pins it to
+        # the bottom of the nav (a divider-like gap plus its own label)
+        # instead of just being the last row in one continuous list, which
+        # reads as "somewhere in the middle" once there are a dozen pages.
+        # Home is pinned first (it's the app's landing/index, not a content
+        # page); every other page is alphabetized by its current-language
+        # title, same as About is pinned outside the sort in its own section.
+        "": [home_page, *content_pages],
+        t("nav.info_section"): [about_page],
+    },
+    # `expanded` defaults to `False` once the sidebar has other elements
+    # below the nav menu (it does here: nothing below it, but Streamlit
+    # applies the same collapsed-with-"View more"/"View less" treatment to
+    # a sectioned nav with enough pages) — every page should always be one
+    # click away, not hidden behind an extra expand/collapse control.
+    expanded=True,
 )
 navigation.run()

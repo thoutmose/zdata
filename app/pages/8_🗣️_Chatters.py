@@ -10,53 +10,39 @@ be traced back to a real person.
 
 from __future__ import annotations
 
-import hashlib
 import logging
 
 import plotly.graph_objects as go
 import polars as pl
 import streamlit as st
-from app.components.chrome import chart_explainer, page_header
+from app.components.chrome import chart_explainer, date_filter_caveat, page_footer, page_header
+from app.components.filters import (
+    apply_global_chatter_filter,
+    apply_global_streamer_filter,
+    get_global_date_range,
+)
 from app.components.search import consume_search_query
-from app.components.theme import CATEGORICAL, apply_base_layout
+from app.components.theme import CATEGORICAL, apply_base_layout, build_pie_figure
 from app.core.i18n import t
 from app.core.logging_config import setup_logging
+from app.data.anonymize import anonymize_chatters
 from app.data.bot_heuristic import bot_filter_expr
-from app.data.repository import get_chatter_breakdown, get_chatter_channel_breakdown
+from app.data.repository import (
+    get_channel_chatter_breakdown,
+    get_chatter_breakdown,
+    get_chatter_channel_breakdown,
+    get_top_chat_channels,
+)
 
 setup_logging()
 logger = logging.getLogger(__name__)
 
 
-def _anonymize(df: pl.DataFrame) -> pl.DataFrame:
-    """Replace real chatter identifiers with a stable, one-way pseudonym.
-
-    The pseudonym is derived from a SHA-256 hash of `chatter_id`, truncated —
-    deterministic (the same chatter always gets the same pseudonym within a
-    download) but not reversible to the real id or username.
-
-    Args:
-        df: DataFrame with `chatter_id` and `chatter` columns.
-
-    Returns:
-        `df` with those two columns replaced by a single `chatter_pseudonym`
-        column, in front.
-    """
-    pseudonyms = [
-        "Chatter_" + hashlib.sha256(cid.encode("utf-8")).hexdigest()[:8]
-        for cid in df["chatter_id"].to_list()
-    ]
-    kept = [c for c in df.columns if c not in ("chatter_id", "chatter")]
-    return (
-        df.select(kept)
-        .with_columns(pl.Series("chatter_pseudonym", pseudonyms))
-        .select(["chatter_pseudonym", *kept])
-    )
-
-
 page_header(t("chatters.title"), "🗣️", t("chatters.description"))
 
-df = get_chatter_breakdown()
+date_range = get_global_date_range()
+df = get_chatter_breakdown(*date_range) if date_range else pl.DataFrame()
+df = apply_global_chatter_filter(df)
 if df.is_empty():
     st.warning(t("chatters.no_data"))
     st.stop()
@@ -160,6 +146,19 @@ chart_explainer(t("chatters.explain.ranked"))
 
 st.subheader(t("chatters.correlation_heading"))
 st.caption(t("chatters.correlation_caption"))
+# As on the Streamers page: name a "correlation" without the coefficient and
+# the reader is left eyeballing scatter. `None` (too few chatters shown, or
+# no variation in one axis) renders as "—" rather than a fabricated number.
+breadth_volume_r = (
+    filtered.select(pl.corr("distinct_channel_count", "total_message_count")).item()
+    if len(filtered) >= 2
+    else None
+)
+st.caption(
+    t("chatters.correlation_stat", r=f"{breadth_volume_r:.2f}")
+    if breadth_volume_r is not None
+    else t("chatters.correlation_stat_na")
+)
 scatter_fig = go.Figure()
 profile_order = ["sedentaire", "multi_streamer", "semi_nomade", "nomade"]
 for i, profile in enumerate(profile_order):
@@ -183,11 +182,60 @@ scatter_fig.update_yaxes(title_text=t("common.unit.messages"))
 st.plotly_chart(scatter_fig, width="stretch")
 chart_explainer(t("chatters.explain.correlation"))
 
+st.subheader(t("chatters.lifespan_heading"))
+st.caption(t("chatters.lifespan_caption"))
+lifespan_hours = pl.col("lifespan_hours")
+lifespan_buckets = (
+    filtered.with_columns(
+        pl.when(lifespan_hours <= 0)
+        .then(pl.lit("single_message"))
+        .when(lifespan_hours < 1)
+        .then(pl.lit("under_1h"))
+        .when(lifespan_hours < 6)
+        .then(pl.lit("1_to_6h"))
+        .when(lifespan_hours < 24)
+        .then(pl.lit("6_to_24h"))
+        .otherwise(pl.lit("24h_plus"))
+        .alias("lifespan_bucket")
+    )
+    .group_by("lifespan_bucket")
+    .agg(pl.len().alias("chatter_count"))
+)
+lifespan_order = ["single_message", "under_1h", "1_to_6h", "6_to_24h", "24h_plus"]
+lifespan_labels = {
+    "single_message": t("chatters.lifespan.single_message"),
+    "under_1h": t("chatters.lifespan.under_1h"),
+    "1_to_6h": t("chatters.lifespan.1_to_6h"),
+    "6_to_24h": t("chatters.lifespan.6_to_24h"),
+    "24h_plus": t("chatters.lifespan.24h_plus"),
+}
+counts_by_bucket = dict(
+    zip(
+        lifespan_buckets["lifespan_bucket"].to_list(),
+        lifespan_buckets["chatter_count"].to_list(),
+        strict=False,
+    )
+)
+lifespan_fig = go.Figure(
+    go.Bar(
+        x=[lifespan_labels[b] for b in lifespan_order],
+        y=[counts_by_bucket.get(b, 0) for b in lifespan_order],
+        marker_color=CATEGORICAL[5],
+        hovertemplate="%{x}<br>%{y:,} chatters<extra></extra>",
+    )
+)
+apply_base_layout(lifespan_fig, title=t("chatters.chart.lifespan"), height=360)
+lifespan_fig.update_yaxes(title_text=t("common.unit.chatters"))
+lifespan_fig.update_layout(showlegend=False)
+st.plotly_chart(lifespan_fig, width="stretch")
+chart_explainer(t("chatters.explain.lifespan"))
+
 st.subheader(t("chatters.profile_heading"))
 selected = st.selectbox(t("chatters.pick_chatter"), options=filtered["chatter"].to_list())
 profile = filtered.filter(pl.col("chatter") == selected).row(0, named=True)
 
-pcol1, pcol2, pcol3, pcol4 = st.columns(4)
+pcol0, pcol1, pcol2, pcol3, pcol4 = st.columns(5)
+pcol0.metric(t("chatters.kpi.global_total"), f"{profile['total_message_count']:,.0f}")
 pcol1.metric(t("chatters.kpi.channels"), f"{profile['distinct_channel_count']:,}")
 pcol2.metric(t("chatters.kpi.top_channel_share"), f"{profile['top_channel_share']:.0%}")
 pcol3.metric(t("chatters.kpi.account_age"), age_labels.get(profile["account_age_bucket"], "—"))
@@ -198,38 +246,215 @@ pcol4.metric(
     help=t("chatters.regularity_help"),
 )
 
+date_filter_caveat()
 channel_activity = get_chatter_channel_breakdown(profile["chatter_id"])
 if channel_activity.is_empty():
     st.info(t("chatters.no_channel_data"))
 else:
+    # The "Global (all channels)" bar is included by default alongside the
+    # per-channel ones, not just implied by the KPI above — it's this
+    # chatter's own total (`total_message_count`, event-wide, unaffected by
+    # the sidebar date filter same as the rest of this section), given a
+    # distinct color since it isn't one more channel to compare against the
+    # others but the sum of all of them.
+    # Global bar last (Plotly draws the first array entry at the *bottom* of
+    # a horizontal bar chart) so it lands at the top as the most prominent
+    # bar, above the per-channel ones sorted ascending below it.
     ordered_channels = channel_activity.sort("message_count", descending=False)
+    global_label = t("chatters.chart.global_bar_label")
+    bar_labels = [*ordered_channels["channel"].to_list(), global_label]
+    bar_values = [*ordered_channels["message_count"].to_list(), profile["total_message_count"]]
+    bar_colors = [*([CATEGORICAL[0]] * len(ordered_channels)), CATEGORICAL[1]]
     channel_fig = go.Figure(
         go.Bar(
-            x=ordered_channels["message_count"],
-            y=ordered_channels["channel"],
+            x=bar_values,
+            y=bar_labels,
             orientation="h",
-            marker_color=CATEGORICAL[0],
+            marker_color=bar_colors,
             hovertemplate="%{y}<br>%{x:,.0f} messages<extra></extra>",
         )
     )
     apply_base_layout(
         channel_fig,
         title=t("chatters.chart.channel_breakdown", chatter=selected),
-        height=max(280, 32 * len(ordered_channels)),
+        height=max(280, 32 * len(bar_labels)),
     )
     channel_fig.update_xaxes(title_text=t("common.unit.messages"))
+    channel_fig.update_yaxes(type="category")
     channel_fig.update_layout(showlegend=False)
     st.plotly_chart(channel_fig, width="stretch")
     chart_explainer(t("chatters.explain.channel_breakdown"))
+
+st.subheader(t("chatters.by_channel_heading"))
+st.caption(t("chatters.by_channel_caption"))
+channel_options = sorted(
+    apply_global_streamer_filter(get_top_chat_channels())["channel"].unique().to_list()
+)
+if not channel_options:
+    st.info(t("common.no_data_in_range"))
+else:
+    picked_channel = st.selectbox(
+        t("chatters.pick_channel"), options=channel_options, key="chatters_channel_pick"
+    )
+    channel_chatters = (
+        get_channel_chatter_breakdown(picked_channel, *date_range) if date_range else pl.DataFrame()
+    )
+    channel_chatters = apply_global_chatter_filter(channel_chatters)
+    if channel_chatters.is_empty():
+        st.info(t("common.no_data_in_range"))
+    else:
+        cf_col1, cf_col2, cf_col3 = st.columns(3)
+        with cf_col1:
+            channel_search = st.text_input(t("chatters.search"), key="channel_chatters_search")
+        with cf_col2:
+            badge_labels = {
+                "moderator": t("common.badge.moderator"),
+                "vip": t("common.badge.vip"),
+                "subscriber": t("common.badge.subscriber"),
+                "plain_viewer": t("common.badge.plain_viewer"),
+            }
+            badge_filter = st.multiselect(
+                t("chatters.badge_filter"),
+                options=list(badge_labels.keys()),
+                format_func=lambda b: badge_labels[b],
+                default=[],
+            )
+        with cf_col3:
+            channel_min_messages = st.number_input(
+                t("chatters.min_messages"), min_value=0, value=0, step=5, key="channel_min_messages"
+            )
+
+        cshown = channel_chatters
+        if channel_search:
+            cshown = cshown.filter(
+                pl.col("chatter")
+                .str.to_lowercase()
+                .str.contains(channel_search.lower(), literal=True)
+            )
+        if badge_filter:
+            badge_columns = {
+                "moderator": "moderator_message_count",
+                "vip": "vip_message_count",
+                "subscriber": "subscriber_message_count",
+                "plain_viewer": "plain_viewer_message_count",
+            }
+            badge_mask = pl.any_horizontal(
+                [pl.col(badge_columns[b]) > 0 for b in badge_filter]
+            )
+            cshown = cshown.filter(badge_mask)
+        cshown = cshown.filter(
+            pl.col("message_count") >= channel_min_messages
+        )
+
+        if cshown.is_empty():
+            st.info(t("common.no_data_in_range"))
+        else:
+            ckpi1, ckpi2, ckpi3, ckpi4 = st.columns(4)
+            ckpi1.metric(t("chatters.kpi.total"), f"{len(cshown):,}")
+            ckpi2.metric(
+                t("chatters.kpi.total_messages"), f"{cshown['message_count'].sum():,.0f}"
+            )
+            ckpi3.metric(
+                t("chatters.kpi.moderators"),
+                f"{(cshown['moderator_message_count'] > 0).sum():,}",
+            )
+            ckpi4.metric(
+                t("chatters.kpi.subscribers"),
+                f"{(cshown['subscriber_message_count'] > 0).sum():,}",
+            )
+
+            badge_totals = {
+                t("common.badge.moderator"): cshown["moderator_message_count"].sum(),
+                t("common.badge.vip"): cshown["vip_message_count"].sum(),
+                t("common.badge.subscriber"): cshown["subscriber_message_count"].sum(),
+                t("common.badge.plain_viewer"): cshown[
+                    "plain_viewer_message_count"
+                ].sum(),
+            }
+            pie_labels = [label for label, total in badge_totals.items() if total > 0]
+            pie_values = [badge_totals[label] for label in pie_labels]
+            if pie_values:
+                pie_colors = [CATEGORICAL[i % len(CATEGORICAL)] for i in range(len(pie_labels))]
+                st.plotly_chart(
+                    build_pie_figure(
+                        pie_labels,
+                        pie_values,
+                        title=t("chatters.chart.badge_mix", channel=picked_channel),
+                        colors=pie_colors,
+                        unit=t("common.unit.messages"),
+                    ),
+                    width="stretch",
+                )
+                chart_explainer(t("chatters.explain.badge_mix"))
+
+            channel_rank_by = st.radio(
+                t("chatters.rank_by"),
+                [t("chatters.rank.messages"), t("chatters.rank.emotes")],
+                horizontal=True,
+                key="channel_rank_by",
+            )
+            channel_rank_col = (
+                "message_count"
+                if channel_rank_by == t("chatters.rank.messages")
+                else "emote_usage_count"
+            )
+            if len(cshown) <= 1:
+                channel_top_n = len(cshown)
+            else:
+                channel_top_n = st.slider(
+                    t("chatters.top_n"),
+                    min_value=1,
+                    max_value=len(cshown),
+                    value=min(15, len(cshown)),
+                    key="channel_top_n",
+                )
+            channel_top = (
+                cshown.sort(channel_rank_col, descending=True)
+                .head(channel_top_n)
+                .sort(channel_rank_col, descending=False)
+            )
+            channel_rank_fig = go.Figure(
+                go.Bar(
+                    x=channel_top[channel_rank_col],
+                    y=channel_top["chatter"],
+                    orientation="h",
+                    marker_color=CATEGORICAL[0],
+                    hovertemplate="%{y}<br>%{x:,.0f}<extra></extra>",
+                )
+            )
+            apply_base_layout(
+                channel_rank_fig,
+                title=t(
+                    "chatters.chart.channel_ranked", channel=picked_channel, metric=channel_rank_by
+                ),
+                height=max(360, 28 * len(channel_top)),
+            )
+            channel_rank_fig.update_layout(showlegend=False)
+            st.plotly_chart(channel_rank_fig, width="stretch")
+            chart_explainer(t("chatters.explain.channel_ranked"))
+
+            with st.expander(t("common.view_data")):
+                st.caption(t("chatters.by_channel_table_caption"))
+                st.dataframe(cshown, width="stretch", hide_index=True)
+                st.caption(t("chatters.anonymize_caption"))
+                st.download_button(
+                    t("common.download_csv"),
+                    anonymize_chatters(cshown).write_csv(),
+                    file_name=f"chatters_{picked_channel}.csv",
+                    mime="text/csv",
+                    key="channel_chatters_download",
+                )
 
 with st.expander(t("common.view_data")):
     st.dataframe(filtered, width="stretch", hide_index=True)
     st.caption(t("chatters.anonymize_caption"))
     st.download_button(
         t("common.download_csv"),
-        _anonymize(filtered).write_csv(),
+        anonymize_chatters(filtered).write_csv(),
         file_name="chatters_anonymized.csv",
         mime="text/csv",
     )
+
+page_footer()
 
 logger.info("Chatters page rendered (rows=%s, rank_by=%s, top_n=%s)", len(filtered), rank_by, top_n)

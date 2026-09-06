@@ -15,11 +15,19 @@ import numpy as np
 import plotly.graph_objects as go
 import polars as pl
 import streamlit as st
-from app.components.chrome import chart_explainer, page_header
+from app.components.chrome import (
+    chart_explainer,
+    date_filter_caveat,
+    entity_filter_caveat,
+    page_footer,
+    page_header,
+)
+from app.components.filters import apply_global_streamer_filter, get_global_streamer_names
 from app.components.theme import CATEGORICAL, apply_base_layout
 from app.core.i18n import t
 from app.core.logging_config import setup_logging
 from app.data.repository import (
+    get_goal_ambition_vs_reality,
     get_goal_amount_distribution,
     get_goals_by_category,
     get_top_goal_setters,
@@ -39,6 +47,10 @@ if by_category.is_empty():
 
 st.caption(t("goals.caveat"))
 
+selected_streamer_names = get_global_streamer_names()
+if selected_streamer_names:
+    top_setters = top_setters.filter(pl.col("streamer_name").is_in(selected_streamer_names))
+
 kpi1, kpi2, kpi3 = st.columns(3)
 kpi1.metric(t("goals.kpi.total_goals"), f"{by_category['goal_count'].sum():,}")
 kpi2.metric(t("goals.kpi.categories"), f"{len(by_category):,}")
@@ -48,6 +60,8 @@ kpi3.metric(
 )
 
 st.subheader(t("goals.category_heading"))
+date_filter_caveat()
+entity_filter_caveat()
 category_sorted = by_category.sort("goal_count", descending=False)
 category_fig = go.Figure(
     go.Bar(
@@ -86,6 +100,8 @@ if not top_setters.is_empty():
     chart_explainer(t("goals.explain.top_setters"))
 
 st.subheader(t("goals.distribution_heading"))
+date_filter_caveat()
+entity_filter_caveat()
 if amounts.is_empty():
     st.info(t("goals.no_amounts"))
 else:
@@ -126,6 +142,31 @@ else:
         st.metric(t("goals.kpi.above_cutoff"), f"{above_count:,}")
         st.caption(t("goals.cutoff_caption"))
 
+st.subheader(t("goals.ambition_heading"))
+date_filter_caveat()
+ambition = apply_global_streamer_filter(get_goal_ambition_vs_reality(), channel_col="twitch_login")
+if ambition.is_empty():
+    st.info(t("goals.no_ambition"))
+else:
+    st.caption(t("goals.ambition_caption"))
+    least_covered = ambition.sort("pct_of_goals_covered", descending=False).head(15)
+    ambition_fig = go.Figure(
+        go.Bar(
+            x=least_covered["pct_of_goals_covered"],
+            y=least_covered["twitch_login"],
+            orientation="h",
+            marker_color=CATEGORICAL[2],
+            hovertemplate="%{y}<br>%{x:.1f}% covered<extra></extra>",
+        )
+    )
+    apply_base_layout(
+        ambition_fig, title=t("goals.chart.ambition"), height=max(360, 28 * len(least_covered))
+    )
+    ambition_fig.update_xaxes(title_text=t("goals.ambition_axis"))
+    ambition_fig.update_layout(showlegend=False, yaxis={"autorange": "reversed"})
+    st.plotly_chart(ambition_fig, width="stretch")
+    chart_explainer(t("goals.explain.ambition"))
+
 with st.expander(t("common.view_data")):
     st.dataframe(by_category, width="stretch", hide_index=True)
     st.dataframe(top_setters, width="stretch", hide_index=True)
@@ -135,5 +176,7 @@ with st.expander(t("common.view_data")):
         file_name="goals_by_category.csv",
         mime="text/csv",
     )
+
+page_footer()
 
 logger.info("Donation Goals page rendered (categories=%s)", len(by_category))

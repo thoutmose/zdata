@@ -18,12 +18,25 @@ runOnSave = false
 gatherUsageStats = false
 
 [theme]
-base = "light"
-primaryColor = "#2a78d6"
-backgroundColor = "#f9f9f7"
-secondaryBackgroundColor = "#fcfcfb"
-textColor = "#0b0b0b"
-font = "sans serif"
+# Every color below is ZEvent's own — scraped from zevent.fr's own
+# <meta name="theme-color"> tag (#00bd00, the brand green) and its bundled
+# CSS (the near-black page/surface grays and off-white text). zevent.fr
+# itself runs black-and-green, not a light UI with a green accent, so this
+# theme matches that rather than approximating it. See
+# `app/components/theme.py::CHROME`/`CATEGORICAL` for the full rationale.
+base = "dark"
+primaryColor = "#00bd00"
+backgroundColor = "#0e0e0e"
+secondaryBackgroundColor = "#171717"
+textColor = "#fafafa"
+# JetBrains Mono, loaded from Google Fonts (the "<name>:<url>" form Streamlit
+# resolves as an external font-face) — a true Nerd Font build (with its
+# extra icon glyphs) isn't available from a public CDN, but this upstream
+# build keeps JetBrains Mono's ligatures (see the `calt`/`liga` features
+# enabled in `theme.py`'s injected CSS).
+font = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
+headingFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
 
 [client]
 showErrorDetails = false

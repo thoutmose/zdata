@@ -14,8 +14,12 @@ dependencies = [
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
     "pyyaml>=6.0.3",
+    "scikit-learn>=1.9.0",
+    "sentencepiece>=0.2.2",
     "sqlalchemy>=2.0.52",
     "streamlit>=1.63.0",
+    "torch>=2.14.0",
+    "transformers>=5.16.1",
 ]
 
 [dependency-groups]
@@ -30,6 +34,24 @@ dev = [
 # directory on sys.path, not the project root, so `import app.core...` only
 # resolves if `app` is importable via site-packages regardless of cwd/entry
 # script — exactly like `streamlit`, `pandas`, etc. already are.
+[tool.uv]
+# This app only ever runs on Linux (dev machine and the Postgres warehouse
+# server are both Linux) — without this, `uv add` tries to resolve a lockfile
+# that also satisfies win32, which fails as soon as a dependency (e.g. a
+# CPU-only PyTorch build) isn't published for every platform.
+environments = ["sys_platform == 'linux'"]
+
+[tool.uv.sources]
+# Only torch needs the CPU-only wheel index (its default PyPI build pulls in
+# CUDA/GPU packages this app has no use for on a server with no GPU) — every
+# other dependency still resolves from PyPI as normal.
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
