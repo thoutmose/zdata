@@ -2948,7 +2948,23 @@ def get_channel_donations_leaderboard_timeseries(
     return get_data_source().channel_donations_leaderboard_timeseries(start, end, top_n)
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+# The 7 accessors below all read `stg.stg_bronze__live_chat` — 8.3M rows,
+# 1.8GB, and (confirmed via `EXPLAIN (ANALYZE, BUFFERS)` against the real
+# warehouse) genuinely no index at all, not even a primary key. Every one
+# of them costs 1.5-8s even sampled, because Postgres has no way to seek
+# to a date range or skip rows without an index — it must sequentially
+# scan and evaluate the full filter (including any regex) against all
+# 8.3M rows regardless of how selective `random() < rate` or `LIMIT` are;
+# confirmed directly: cutting the target sample size 50x changed nothing,
+# because the scan cost is the *table's*, not the *sample's*. That's a
+# warehouse-side gap this app's read-only connection can't fix (adding an
+# index is a `zevent-db` change, a separate project — see the About page's
+# "related projects"). The only lever available here is caching more
+# aggressively than the app's usual 60s: these figures don't need
+# sub-minute freshness (hostility/sentiment/trending phrases are already
+# hour-bucketed aggregates), so a 5-minute TTL cuts how often *anyone*
+# pays this cost by 5x, without the data going meaningfully stale.
+@st.cache_data(ttl=300, show_spinner=False)
 def get_chat_hype_components_timeseries(start: datetime, end: datetime) -> pl.DataFrame:
     """Cached, page-facing accessor for every channel-hour's raw, unweighted hype components.
 
@@ -2962,7 +2978,7 @@ def get_chat_hype_components_timeseries(start: datetime, end: datetime) -> pl.Da
     return get_data_source().chat_hype_components_timeseries(start, end)
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def get_channel_sentiment_leaderboard_timeseries(
     start: datetime, end: datetime, top_n: int
 ) -> pl.DataFrame:
@@ -2980,7 +2996,7 @@ def get_channel_sentiment_leaderboard_timeseries(
     return get_data_source().channel_sentiment_leaderboard_timeseries(start, end, top_n)
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def get_channel_toxicity_leaderboard_timeseries(
     start: datetime, end: datetime, top_n: int
 ) -> pl.DataFrame:
@@ -2998,7 +3014,7 @@ def get_channel_toxicity_leaderboard_timeseries(
     return get_data_source().channel_toxicity_leaderboard_timeseries(start, end, top_n)
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def get_chat_toxicity_examples(start: datetime, end: datetime, limit: int) -> pl.DataFrame:
     """Cached, page-facing accessor for a sample of messages flagged as hostile.
 
@@ -3013,7 +3029,7 @@ def get_chat_toxicity_examples(start: datetime, end: datetime, limit: int) -> pl
     return get_data_source().chat_toxicity_examples(start, end, limit)
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def get_chat_message_sample(start: datetime, end: datetime, limit: int) -> pl.DataFrame:
     """Cached, page-facing accessor for a general-purpose random message sample.
 
@@ -3028,7 +3044,7 @@ def get_chat_message_sample(start: datetime, end: datetime, limit: int) -> pl.Da
     return get_data_source().chat_message_sample(start, end, limit)
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def get_chat_mood_timeseries(start: datetime, end: datetime) -> pl.DataFrame:
     """Cached, page-facing accessor for event-wide chat hype/sentiment, hour by hour.
 
@@ -3042,7 +3058,7 @@ def get_chat_mood_timeseries(start: datetime, end: datetime) -> pl.DataFrame:
     return get_data_source().chat_mood_timeseries(start, end)
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def get_chat_trending_phrases(start: datetime, end: datetime, top_n: int) -> pl.DataFrame:
     """Cached, page-facing accessor for the event-wide trending/copypasta phrase leaderboard.
 
